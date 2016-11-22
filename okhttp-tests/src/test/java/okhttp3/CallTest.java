@@ -15,82 +15,38 @@
  */
 package okhttp3;
 
+import okhttp3.internal.*;
+import okhttp3.internal.Util;
+import okhttp3.internal.http.RecordingProxySelector;
+import okhttp3.internal.io.InMemoryFileSystem;
+import okhttp3.internal.tls.SslClient;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.*;
+import okio.*;
+import org.junit.*;
+import org.junit.rules.TestRule;
+import org.junit.rules.Timeout;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
-import java.net.CookieManager;
-import java.net.HttpCookie;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ProtocolException;
-import java.net.Proxy;
-import java.net.ServerSocket;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.net.UnknownServiceException;
+import java.net.*;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import javax.net.ServerSocketFactory;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLProtocolException;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import okhttp3.internal.DoubleInetAddressDns;
-import okhttp3.internal.RecordingOkAuthenticator;
-import okhttp3.internal.SingleInetAddressDns;
-import okhttp3.internal.Util;
-import okhttp3.internal.Version;
-import okhttp3.internal.http.RecordingProxySelector;
-import okhttp3.internal.io.InMemoryFileSystem;
-import okhttp3.internal.tls.SslClient;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import okhttp3.mockwebserver.SocketPolicy;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.GzipSink;
-import okio.Okio;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
 
 import static java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER;
 import static okhttp3.TestUtil.awaitGarbageCollection;
 import static okhttp3.TestUtil.defaultClient;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public final class CallTest {
   @Rule public final TestRule timeout = new Timeout(30_000);
@@ -2134,7 +2090,7 @@ public final class CallTest {
     executeSynchronously("/");
 
     RecordedRequest recordedRequest = server.takeRequest();
-    assertTrue(recordedRequest.getHeader("User-Agent")
+      assertTrue(recordedRequest.getHeader("User-Agent")
         .matches(Version.userAgent()));
   }
 

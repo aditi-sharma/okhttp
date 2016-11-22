@@ -15,15 +15,15 @@
  */
 package okhttp3.curl;
 
-import java.io.IOException;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static okhttp3.curl.Main.fromArgs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class MainTest {
   @Test public void simple() {
@@ -88,6 +88,16 @@ public class MainTest {
     Request request = fromArgs("-H", "If-Modified-Since: Mon, 18 Aug 2014 15:16:06 GMT",
         "http://example.com").createRequest();
     assertEquals("Mon, 18 Aug 2014 15:16:06 GMT", request.header("If-Modified-Since"));
+  }
+
+  @Test public void testSampleRequest(){
+    Main test1 = new Main();
+    test1.url= "http://example.com";
+    test1.version = false;
+    test1.showHttp2Frames = true;
+    test1.showHeaders = true;
+    test1.run();
+
   }
 
   private static String bodyAsString(RequestBody body) {

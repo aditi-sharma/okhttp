@@ -15,19 +15,18 @@
  */
 package okhttp3;
 
+import okhttp3.internal.Util;
+import okio.Buffer;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
-import okhttp3.internal.Util;
-import okio.Buffer;
-import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public final class RequestTest {
   @Test public void string() throws Exception {
@@ -120,7 +119,7 @@ public final class RequestTest {
   @Test public void uninitializedURI() throws Exception {
     Request request = new Request.Builder().url("http://localhost/api").build();
     assertEquals(new URI("http://localhost/api"), request.url().uri());
-    assertEquals(HttpUrl.parse("http://localhost/api"), request.url());
+    assertEquals(HttpUrl.parse("http://localhost/api").toString(), request.url());
   }
 
   @Test public void newBuilderUrlResetsUrl() throws Exception {
@@ -134,7 +133,7 @@ public final class RequestTest {
     requestWithCache.url();
     Request builtRequestWithCache = requestWithCache.newBuilder().url(
         "http://localhost/api/foo").build();
-    assertEquals(HttpUrl.parse("http://localhost/api/foo"), builtRequestWithCache.url());
+    assertEquals(requestWithoutCache.toString(), builtRequestWithCache.tag().toString());
   }
 
   @Test public void cacheControl() throws Exception {
