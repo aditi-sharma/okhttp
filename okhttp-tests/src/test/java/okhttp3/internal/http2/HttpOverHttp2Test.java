@@ -15,6 +15,21 @@
  */
 package okhttp3.internal.http2;
 
+import okhttp3.*;
+import okhttp3.internal.DoubleInetAddressDns;
+import okhttp3.internal.RecordingOkAuthenticator;
+import okhttp3.internal.SingleInetAddressDns;
+import okhttp3.internal.Util;
+import okhttp3.internal.tls.SslClient;
+import okhttp3.mockwebserver.*;
+import okio.Buffer;
+import okio.BufferedSink;
+import okio.GzipSink;
+import okio.Okio;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Authenticator;
@@ -24,49 +39,11 @@ import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.net.ssl.HostnameVerifier;
-import okhttp3.Cache;
-import okhttp3.Call;
-import okhttp3.Cookie;
-import okhttp3.Credentials;
-import okhttp3.Headers;
-import okhttp3.Interceptor;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.RecordingCookieJar;
-import okhttp3.RecordingHostnameVerifier;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.internal.DoubleInetAddressDns;
-import okhttp3.internal.RecordingOkAuthenticator;
-import okhttp3.internal.SingleInetAddressDns;
-import okhttp3.internal.Util;
-import okhttp3.internal.tls.SslClient;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.PushPromise;
-import okhttp3.mockwebserver.RecordedRequest;
-import okhttp3.mockwebserver.SocketPolicy;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.GzipSink;
-import okio.Okio;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static okhttp3.TestUtil.defaultClient;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /** Test how SPDY interacts with HTTP/2 features. */
 public final class HttpOverHttp2Test {
@@ -221,8 +198,8 @@ public final class HttpOverHttp2Test {
     server.enqueue(new MockResponse().setBody("GHIJKL"));
 
     Call call1 = client.newCall(new Request.Builder()
-        .url(server.url("/r1"))
-        .build());
+            .url(server.url("/r1"))
+            .build());
     Call call2 = client.newCall(new Request.Builder()
         .url(server.url("/r1"))
         .build());
@@ -256,8 +233,8 @@ public final class HttpOverHttp2Test {
 
   @Test public void gzippedResponseBody() throws Exception {
     server.enqueue(new MockResponse()
-        .addHeader("Content-Encoding: gzip")
-        .setBody(gzip("ABCABCABC")));
+            .addHeader("Content-Encoding: gzip")
+            .setBody(gzip("ABCABCABC")));
 
     Call call = client.newCall(new Request.Builder()
         .url(server.url("/r1"))
@@ -387,8 +364,8 @@ public final class HttpOverHttp2Test {
         .build();
 
     Call call = client.newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+            .url(server.url("/"))
+            .build());
     Response response = call.execute();
 
     try {
@@ -401,24 +378,24 @@ public final class HttpOverHttp2Test {
 
   @Test public void connectionTimeout() throws Exception {
     server.enqueue(new MockResponse()
-        .setBody("A")
-        .setBodyDelay(1, SECONDS));
+            .setBody("A")
+            .setBodyDelay(1, SECONDS));
 
     OkHttpClient client1 = client.newBuilder()
         .readTimeout(2000, MILLISECONDS)
         .build();
     Call call1 = client1
         .newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+                .url(server.url("/"))
+                .build());
 
     OkHttpClient client2 = client.newBuilder()
         .readTimeout(200, MILLISECONDS)
         .build();
     Call call2 = client2
         .newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+                .url(server.url("/"))
+                .build());
 
     Response response1 = call1.execute();
     assertEquals("A", response1.body().string());
@@ -456,8 +433,8 @@ public final class HttpOverHttp2Test {
     assertEquals("A", response2.body().string());
 
     Call call3 = client.newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+            .url(server.url("/"))
+            .build());
     Response response3 = call3.execute();
     assertEquals("A", response3.body().string());
 
@@ -475,7 +452,7 @@ public final class HttpOverHttp2Test {
         .addHeader("ETag: v1")
         .setBody("A"));
     server.enqueue(new MockResponse()
-        .setResponseCode(HttpURLConnection.HTTP_NOT_MODIFIED));
+            .setResponseCode(HttpURLConnection.HTTP_NOT_MODIFIED));
 
     Call call1 = client.newCall(new Request.Builder()
         .url(server.url("/"))
@@ -518,8 +495,8 @@ public final class HttpOverHttp2Test {
     response1.body().close();
 
     Call call2 = client.newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+            .url(server.url("/"))
+            .build());
     Response response2 = call2.execute();
     assertEquals("ABCD", response2.body().source().readUtf8());
     response2.body().close();
@@ -555,7 +532,7 @@ public final class HttpOverHttp2Test {
         .build();
 
     server.enqueue(new MockResponse()
-        .addHeader("set-cookie: a=b"));
+            .addHeader("set-cookie: a=b"));
 
     Call call = client.newCall(new Request.Builder()
         .url(server.url("/"))
@@ -600,10 +577,10 @@ public final class HttpOverHttp2Test {
 
   @Test public void recoverFromOneRefusedStreamReusesConnection() throws Exception {
     server.enqueue(new MockResponse()
-        .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
-        .setHttp2ErrorCode(ErrorCode.REFUSED_STREAM.httpCode));
+            .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
+            .setHttp2ErrorCode(ErrorCode.REFUSED_STREAM.httpCode));
     server.enqueue(new MockResponse()
-        .setBody("abc"));
+            .setBody("abc"));
 
     Call call = client.newCall(new Request.Builder()
         .url(server.url("/"))
@@ -671,10 +648,10 @@ public final class HttpOverHttp2Test {
 
   private void noRecoveryFromErrorWithRetryDisabled(ErrorCode errorCode) throws Exception {
     server.enqueue(new MockResponse()
-        .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
-        .setHttp2ErrorCode(errorCode.httpCode));
+            .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
+            .setHttp2ErrorCode(errorCode.httpCode));
     server.enqueue(new MockResponse()
-        .setBody("abc"));
+            .setBody("abc"));
 
     client = client.newBuilder()
         .retryOnConnectionFailure(false)
@@ -693,8 +670,8 @@ public final class HttpOverHttp2Test {
 
   @Test public void nonAsciiResponseHeader() throws Exception {
     server.enqueue(new MockResponse()
-        .addHeaderLenient("Alpha", "α")
-        .addHeaderLenient("β", "Beta"));
+            .addHeaderLenient("Alpha", "α")
+            .addHeaderLenient("β", "Beta"));
 
     Call call = client.newCall(new Request.Builder()
         .url(server.url("/"))
@@ -718,7 +695,6 @@ public final class HttpOverHttp2Test {
         .url(server.url("/foo"))
         .build());
     Response response = call.execute();
-
     assertEquals("ABCDE", response.body().string());
     assertEquals(200, response.code());
     assertEquals("Sweet", response.message());
@@ -766,10 +742,11 @@ public final class HttpOverHttp2Test {
   @Test public void settingsLimitsMaxConcurrentStreams() throws Exception {
     Settings settings = new Settings();
     settings.set(Settings.MAX_CONCURRENT_STREAMS, 2);
-
+    MockResponse mockResponse = new MockResponse().withSettings(settings);
+    MockResponse mockResponse2 = mockResponse.clone();
+      assertEquals(mockResponse2.getSettings().get(Settings.MAX_CONCURRENT_STREAMS),2);
     // Read & write a full request to confirm settings are accepted.
-    server.enqueue(new MockResponse().withSettings(settings));
-
+    server.enqueue(mockResponse);
     Call call = client.newCall(new Request.Builder()
         .url(server.url("/"))
         .build());

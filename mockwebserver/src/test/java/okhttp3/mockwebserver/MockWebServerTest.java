@@ -15,24 +15,8 @@
  */
 package okhttp3.mockwebserver;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.Headers;
+import okhttp3.Protocol;
 import okhttp3.internal.Util;
 import org.junit.After;
 import org.junit.Rule;
@@ -40,13 +24,17 @@ import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.*;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public final class MockWebServerTest {
   @Rule public final MockWebServer server = new MockWebServer();
@@ -57,6 +45,10 @@ public final class MockWebServerTest {
     assertEquals("HTTP/1.1 200 OK", response.getStatus());
   }
 
+/*  @Test public void checkTrustWithClient() {
+
+  }
+*/
   @Test public void setResponseMockReason() {
     String[] reasons = {
         "Mock Response",
@@ -122,6 +114,7 @@ public final class MockWebServerTest {
   }
 
   @Test public void redirect() throws Exception {
+    TimeUnit unit = TimeUnit.SECONDS;
     server.enqueue(new MockResponse()
         .setResponseCode(HttpURLConnection.HTTP_MOVED_TEMP)
         .addHeader("Location: " + server.url("/new-path"))
@@ -132,13 +125,12 @@ public final class MockWebServerTest {
     InputStream in = connection.getInputStream();
     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
     assertEquals("This is the new location!", reader.readLine());
-
+    assertEquals(2,server.getRequestCount());
     RecordedRequest first = server.takeRequest();
     assertEquals("GET / HTTP/1.1", first.getRequestLine());
-    RecordedRequest redirect = server.takeRequest();
+    RecordedRequest redirect = server.takeRequest(5, unit);
     assertEquals("GET /new-path HTTP/1.1", redirect.getRequestLine());
   }
-
   /**
    * Test that MockWebServer blocks for a call to enqueue() if a request is made before a mock
    * response is ready.
@@ -162,9 +154,9 @@ public final class MockWebServerTest {
 
   @Test public void nonHexadecimalChunkSize() throws Exception {
     server.enqueue(new MockResponse()
-        .setBody("G\r\nxxxxxxxxxxxxxxxx\r\n0\r\n\r\n")
-        .clearHeaders()
-        .addHeader("Transfer-encoding: chunked"));
+            .setBody("G\r\nxxxxxxxxxxxxxxxx\r\n0\r\n\r\n")
+            .clearHeaders()
+            .addHeader("Transfer-encoding: chunked"));
 
     URLConnection connection = server.url("/").url().openConnection();
     InputStream in = connection.getInputStream();
@@ -173,6 +165,51 @@ public final class MockWebServerTest {
       fail();
     } catch (IOException expected) {
     }
+  }
+
+  @Test (expected = IllegalStateException.class)
+  public void setSocketFactoryAfterServerStart() throws Exception {
+    server.setServerSocketFactory(null);
+    URLConnection urlConnect = server.url("/").url().openConnection();
+    InputStream in = urlConnect.getInputStream();
+    assertEquals(70, in.read());
+  }
+
+  @Test (expected = IllegalArgumentException.class)
+  public void HTTP_1ProtocolMissing() throws Exception {
+    Protocol protocol_h2 = Protocol.HTTP_2;
+    MockWebServer newServer = new MockWebServer();
+            newServer.enqueue(new MockResponse()
+                    .setBody("HTTP 2 ssl connection"));
+    List <Protocol> list = Arrays.asList(protocol_h2);
+    newServer.setProtocols(list);
+  }
+
+  @Test (expected = IllegalArgumentException.class)
+  public void NullProtocolTest() {
+    Protocol protocol = null;
+    Protocol protocol_h1 = Protocol.HTTP_1_1;
+    MockWebServer newServer = new MockWebServer();
+    List <Protocol> list = Arrays.asList(protocol, protocol_h1);
+    newServer.setProtocols(list);
+  }
+
+  @Test public void verifyPushPromiseFields() throws Exception{
+    PushPromise pushPromise = new PushPromise("GET", "/foo/bar", Headers.of("foo", "bar"),
+            new MockResponse().setBody("bar").setStatus("HTTP/1.1 200 Sweet"));
+    PushPromise pushPromise2 = new PushPromise("HEAD",null , Headers.of("foo", "bar"),
+            new MockResponse().setStatus("HTTP/1.1 204 Sweet"));
+    MockResponse response = new MockResponse()
+            .setBody("ABCDE")
+            .setStatus("HTTP/1.1 200 Sweet")
+            .withPush(pushPromise)
+            .withPush(pushPromise2);
+    assertEquals(response.getPushPromises().get(0).method().toString(), "GET");
+    assertEquals(response.getPushPromises().get(1).method().toString(), "HEAD");
+    assertEquals(response.getPushPromises().get(1).path(), null);
+    assertEquals(response.getPushPromises().get(0).path().toString(), "/foo/bar");
+    assertEquals(response.getPushPromises().get(1).response().toString(), "HTTP/1.1 204 Sweet");
+    assertEquals(response.getPushPromises().get(0).headers().toString(), "foo: bar\n");
   }
 
   @Test public void responseTimeout() throws Exception {
