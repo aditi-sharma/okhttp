@@ -32,9 +32,8 @@ import org.junit.rules.TemporaryFolder;
 import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.*;
 import java.net.Authenticator;
-import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -332,7 +331,7 @@ public final class HttpOverHttp2Test {
     char[] body = new char[4096]; // 4KiB to read.
     Arrays.fill(body, 'y');
     server.enqueue(new MockResponse().setBody(new String(body))
-        .throttleBody(1024, 1, SECONDS)); // Slow connection 1KiB/second.
+            .throttleBody(1024, 1, SECONDS)); // Slow connection 1KiB/second.
 
     client = client.newBuilder()
         .readTimeout(2, SECONDS)
@@ -465,8 +464,8 @@ public final class HttpOverHttp2Test {
     assertEquals(0, cache.hitCount());
 
     Call call2 = client.newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+            .url(server.url("/"))
+            .build());
     Response response2 = call2.execute();
     assertEquals("A", response2.body().string());
 
@@ -484,8 +483,8 @@ public final class HttpOverHttp2Test {
         .addHeader("cache-control: max-age=60")
         .setBody("ABCD"));
     server.enqueue(new MockResponse()
-        .addHeader("cache-control: max-age=60")
-        .setBody("EFGH"));
+            .addHeader("cache-control: max-age=60")
+            .setBody("EFGH"));
 
     Call call1 = client.newCall(new Request.Builder()
         .url(server.url("/"))
@@ -516,8 +515,8 @@ public final class HttpOverHttp2Test {
 
     server.enqueue(new MockResponse());
     Call call = client.newCall(new Request.Builder()
-        .url(server.url("/"))
-        .build());
+            .url(server.url("/"))
+            .build());
     Response response = call.execute();
     assertEquals("", response.body().string());
 
@@ -597,7 +596,7 @@ public final class HttpOverHttp2Test {
         .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
         .setHttp2ErrorCode(ErrorCode.INTERNAL_ERROR.httpCode));
     server.enqueue(new MockResponse()
-        .setBody("abc"));
+            .setBody("abc"));
 
     client = client.newBuilder()
         .dns(new DoubleInetAddressDns())
@@ -614,12 +613,13 @@ public final class HttpOverHttp2Test {
   }
 
   @Test public void recoverFromMultipleRefusedStreamsRequiresNewConnection() throws Exception {
+      MockResponse mockResponse = (new MockResponse()
+              .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
+              .setHttp2ErrorCode(ErrorCode.REFUSED_STREAM.httpCode));
+    server.enqueue(mockResponse);
     server.enqueue(new MockResponse()
         .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
-        .setHttp2ErrorCode(ErrorCode.REFUSED_STREAM.httpCode));
-    server.enqueue(new MockResponse()
-        .setSocketPolicy(SocketPolicy.RESET_STREAM_AT_START)
-        .setHttp2ErrorCode(ErrorCode.REFUSED_STREAM.httpCode));
+        .setHttp2ErrorCode(mockResponse.getHttp2ErrorCode()));
     server.enqueue(new MockResponse()
         .setBody("abc"));
 
@@ -682,6 +682,20 @@ public final class HttpOverHttp2Test {
     assertEquals("α", response.header("Alpha"));
     assertEquals("Beta", response.header("β"));
   }
+    @Test public void PushPromiseServerConnectionViaHttp2() throws Exception {
+        PushPromise pushPromise = new PushPromise("GET", "/foo/bar", Headers.of("foo", "bar"),
+                new MockResponse().setBody("bar").setStatus("HTTP/1.1 200 Sweet"));
+        server.enqueue(new MockResponse()
+                .withPush(pushPromise));
+        URLConnection connection = server.url("/").url().openConnection();
+        assertEquals(-1, connection.getContentLength());
+
+        Call call = client.newCall(new Request.Builder()
+                .url(server.url("/"))
+                .build());
+        Response response = call.execute();
+        assertEquals(response.headers().toString(), "content-length: 0\n");
+    }
 
   @Test public void serverSendsPushPromise_GET() throws Exception {
     PushPromise pushPromise = new PushPromise("GET", "/foo/bar", Headers.of("foo", "bar"),
@@ -707,6 +721,7 @@ public final class HttpOverHttp2Test {
     RecordedRequest pushedRequest = server.takeRequest();
     assertEquals("GET /foo/bar HTTP/1.1", pushedRequest.getRequestLine());
     assertEquals("bar", pushedRequest.getHeader("foo"));
+
   }
 
   @Test public void serverSendsPushPromise_HEAD() throws Exception {

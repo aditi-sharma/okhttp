@@ -15,8 +15,7 @@
  */
 package okhttp3.mockwebserver;
 
-import okhttp3.Headers;
-import okhttp3.Protocol;
+import okhttp3.*;
 import okhttp3.internal.Util;
 import org.junit.After;
 import org.junit.Rule;
@@ -45,10 +44,6 @@ public final class MockWebServerTest {
     assertEquals("HTTP/1.1 200 OK", response.getStatus());
   }
 
-/*  @Test public void checkTrustWithClient() {
-
-  }
-*/
   @Test public void setResponseMockReason() {
     String[] reasons = {
         "Mock Response",
