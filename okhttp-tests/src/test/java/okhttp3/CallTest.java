@@ -195,7 +195,7 @@ public final class CallTest {
         .clearHeaders()
         .addHeader("Content-Length", "100"));
     server.enqueue(new MockResponse()
-        .setBody("abc"));
+            .setBody("abc"));
 
     Request headRequest = new Request.Builder()
         .url(server.url("/"))
@@ -630,8 +630,8 @@ public final class CallTest {
 
   @Test public void get_Async() throws Exception {
     server.enqueue(new MockResponse()
-        .setBody("abc")
-        .addHeader("Content-Type: text/plain"));
+            .setBody("abc")
+            .addHeader("Content-Type: text/plain"));
 
     Request request = new Request.Builder()
         .url(server.url("/"))
@@ -655,13 +655,15 @@ public final class CallTest {
         .build();
 
     client.newCall(request).enqueue(new Callback() {
-      @Override public void onFailure(Call call, IOException e) {
-        fail();
-      }
+        @Override
+        public void onFailure(Call call, IOException e) {
+            fail();
+        }
 
-      @Override public void onResponse(Call call, Response response) throws IOException {
-        throw new IOException("a");
-      }
+        @Override
+        public void onResponse(Call call, Response response) throws IOException {
+            throw new IOException("a");
+        }
     });
 
     assertEquals("INFO: Callback failure for call to " + server.url("/") + "...",
@@ -707,19 +709,21 @@ public final class CallTest {
 
     Request request = new Request.Builder().url(server.url("/a")).build();
     client.newCall(request).enqueue(new Callback() {
-      @Override public void onFailure(Call call, IOException e) {
-        throw new AssertionError();
-      }
+        @Override
+        public void onFailure(Call call, IOException e) {
+            throw new AssertionError();
+        }
 
-      @Override public void onResponse(Call call, Response response) throws IOException {
-        InputStream bytes = response.body().byteStream();
-        assertEquals('a', bytes.read());
-        assertEquals('b', bytes.read());
-        assertEquals('c', bytes.read());
+        @Override
+        public void onResponse(Call call, Response response) throws IOException {
+            InputStream bytes = response.body().byteStream();
+            assertEquals('a', bytes.read());
+            assertEquals('b', bytes.read());
+            assertEquals('c', bytes.read());
 
-        // This request will share a connection with 'A' cause it's all done.
-        client.newCall(new Request.Builder().url(server.url("/b")).build()).enqueue(callback);
-      }
+            // This request will share a connection with 'A' cause it's all done.
+            client.newCall(new Request.Builder().url(server.url("/b")).build()).enqueue(callback);
+        }
     });
 
     callback.await(server.url("/b")).assertCode(200).assertBody("def");
@@ -930,8 +934,8 @@ public final class CallTest {
   @Test public void tls_Async() throws Exception {
     enableTls();
     server.enqueue(new MockResponse()
-        .setBody("abc")
-        .addHeader("Content-Type: text/plain"));
+            .setBody("abc")
+            .addHeader("Content-Type: text/plain"));
 
     Request request = new Request.Builder()
         .url(server.url("/"))
@@ -1208,7 +1212,7 @@ public final class CallTest {
     // Hit that stored response. It's different, but Vary says it doesn't matter.
     Thread.sleep(10); // Make sure the timestamps are unique.
     RecordedResponse cacheHit = executeSynchronously(
-        "/", "Accept-Language", "en-US", "Accept-Charset", "UTF-8");
+            "/", "Accept-Language", "en-US", "Accept-Charset", "UTF-8");
 
     // Check the merged response. The request is the application's original request.
     cacheHit.assertCode(200)
@@ -1502,10 +1506,10 @@ public final class CallTest {
 
   private void enqueueRequestTimeoutResponses() {
     server.enqueue(new MockResponse()
-        .setSocketPolicy(SocketPolicy.DISCONNECT_AT_END)
-        .setResponseCode(HttpURLConnection.HTTP_CLIENT_TIMEOUT)
-        .setHeader("Connection", "Close")
-        .setBody("You took too long!"));
+            .setSocketPolicy(SocketPolicy.DISCONNECT_AT_END)
+            .setResponseCode(HttpURLConnection.HTTP_CLIENT_TIMEOUT)
+            .setHeader("Connection", "Close")
+            .setBody("You took too long!"));
     server.enqueue(new MockResponse().setBody("Body"));
   }
 
@@ -1554,8 +1558,8 @@ public final class CallTest {
 
   @Test public void responseCookies() throws Exception {
     server.enqueue(new MockResponse()
-        .addHeader("Set-Cookie", "a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT")
-        .addHeader("Set-Cookie", "c=d; Expires=Fri, 02 Jan 1970 23:59:59 GMT; path=/bar; secure"));
+            .addHeader("Set-Cookie", "a=b; Expires=Thu, 01 Jan 1970 00:00:00 GMT")
+            .addHeader("Set-Cookie", "c=d; Expires=Fri, 02 Jan 1970 23:59:59 GMT; path=/bar; secure"));
 
     RecordingCookieJar cookieJar = new RecordingCookieJar();
     client = client.newBuilder()
@@ -1622,7 +1626,7 @@ public final class CallTest {
   @Test public void redirectsDoNotIncludeTooManyAuthHeaders() throws Exception {
     server2.enqueue(new MockResponse().setBody("Page 2"));
     server.enqueue(new MockResponse()
-        .setResponseCode(401));
+            .setResponseCode(401));
     server.enqueue(new MockResponse()
         .setResponseCode(302)
         .addHeader("Location: " + server2.url("/b")));
@@ -1732,8 +1736,8 @@ public final class CallTest {
 
   @Test public void http204WithBodyDisallowed() throws IOException {
     server.enqueue(new MockResponse()
-        .setResponseCode(204)
-        .setBody("I'm not even supposed to be here today."));
+            .setResponseCode(204)
+            .setBody("I'm not even supposed to be here today."));
 
     executeSynchronously("/")
         .assertFailure("HTTP 204 had non-zero Content-Length: 39");
@@ -1824,9 +1828,10 @@ public final class CallTest {
     final Call call = client.newCall(new Request.Builder().url(server.url("/a")).build());
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Future<Response> result = executor.submit(new Callable<Response>() {
-      @Override public Response call() throws Exception {
-        return call.execute();
-      }
+        @Override
+        public Response call() throws Exception {
+            return call.execute();
+        }
     });
 
     Thread.sleep(100); // wait for it to go in flight.
@@ -1845,10 +1850,11 @@ public final class CallTest {
     final Call call = client.newCall(request);
 
     server.setDispatcher(new Dispatcher() {
-      @Override public MockResponse dispatch(RecordedRequest request) {
-        call.cancel();
-        return new MockResponse().setBody("A");
-      }
+        @Override
+        public MockResponse dispatch(RecordedRequest request) {
+            call.cancel();
+            return new MockResponse().setBody("A");
+        }
     });
 
     try {
@@ -1927,7 +1933,7 @@ public final class CallTest {
     assertEquals("/a", server.takeRequest().getPath());
 
     callback.await(requestA.url()).assertFailure("Canceled", "stream was reset: CANCEL",
-        "Socket closed");
+            "Socket closed");
   }
 
   @Test public void canceledBeforeResponseReadSignalsOnFailure_HTTPS() throws Exception {
@@ -2091,7 +2097,7 @@ public final class CallTest {
 
     RecordedRequest recordedRequest = server.takeRequest();
       assertTrue(recordedRequest.getHeader("User-Agent")
-        .matches(Version.userAgent()));
+              .matches(Version.userAgent()));
   }
 
   @Test public void setFollowRedirectsFalse() throws Exception {
@@ -2195,9 +2201,9 @@ public final class CallTest {
       }
     };
     Call call = client.newCall(new Request.Builder()
-        .url(server.url("/"))
-        .post(requestBody)
-        .build());
+            .url(server.url("/"))
+            .post(requestBody)
+            .build());
     assertEquals("Response 1", call.execute().body().string());
   }
 
@@ -2279,8 +2285,8 @@ public final class CallTest {
   /** Confirm that the proxy authenticator works for unencrypted HTTP proxies. */
   @Test public void httpProxyAuthenticate() throws Exception {
     server.enqueue(new MockResponse()
-        .setResponseCode(407)
-        .addHeader("Proxy-Authenticate: Basic realm=\"localhost\""));
+            .setResponseCode(407)
+            .addHeader("Proxy-Authenticate: Basic realm=\"localhost\""));
     server.enqueue(new MockResponse()
         .setBody("response body"));
 
@@ -2379,8 +2385,8 @@ public final class CallTest {
   @Test public void noProactiveProxyAuthorization() throws Exception {
     server.useHttps(sslClient.socketFactory, true);
     server.enqueue(new MockResponse()
-        .setSocketPolicy(SocketPolicy.UPGRADE_TO_SSL_AT_END)
-        .clearHeaders());
+            .setSocketPolicy(SocketPolicy.UPGRADE_TO_SSL_AT_END)
+            .clearHeaders());
     server.enqueue(new MockResponse()
         .setBody("response body"));
 
@@ -2427,7 +2433,7 @@ public final class CallTest {
 
   @Test public void serverSendsInvalidResponseHeaders() throws Exception {
     server.enqueue(new MockResponse()
-        .setStatus("HTP/1.1 200 OK"));
+            .setStatus("HTP/1.1 200 OK"));
 
     executeSynchronously("/")
         .assertFailure("Unexpected status line: HTP/1.1 200 OK");
@@ -2526,9 +2532,9 @@ public final class CallTest {
       final boolean chunked, final int size, final int writeSize) throws Exception {
     server.enqueue(new MockResponse());
     executeSynchronously(new Request.Builder()
-        .url(server.url("/"))
-        .post(requestBody(chunked, size, writeSize))
-        .build());
+            .url(server.url("/"))
+            .post(requestBody(chunked, size, writeSize))
+            .build());
   }
 
   /** https://github.com/square/okhttp/issues/2344 */

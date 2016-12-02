@@ -15,22 +15,19 @@
  */
 package okhttp3.internal.tls;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.security.auth.x500.X500Principal;
-import okhttp3.Call;
-import okhttp3.DelegatingSSLSocketFactory;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import okhttp3.*;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 import static okhttp3.TestUtil.defaultClient;
 import static org.junit.Assert.assertEquals;
@@ -185,6 +182,14 @@ public final class ClientAuthTest {
     } catch (SSLHandshakeException expected) {
     }
   }
+
+    @Test (expected = AssertionError.class)
+    public void invalidSSLClientKeystore() {
+            SslClient.Builder sslClientBuilder = new SslClient.Builder()
+                    .keyStoreType("ab");
+        SslClient sslClient = sslClientBuilder.build();
+
+    }
 
   public OkHttpClient buildClient(HeldCertificate cert, HeldCertificate... chain) {
     SslClient.Builder sslClientBuilder = new SslClient.Builder()

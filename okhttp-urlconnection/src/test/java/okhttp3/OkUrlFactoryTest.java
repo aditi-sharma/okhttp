@@ -1,16 +1,5 @@
 package okhttp3;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-import javax.net.ssl.HttpsURLConnection;
 import okhttp3.internal.URLFilter;
 import okhttp3.internal.huc.OkHttpURLConnection;
 import okhttp3.internal.io.InMemoryFileSystem;
@@ -22,6 +11,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import javax.net.ssl.HttpsURLConnection;
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static okio.Okio.buffer;
@@ -135,6 +136,12 @@ public class OkUrlFactoryTest {
     HttpURLConnection connection2 = factory.open(server.url("/").url());
     connection2.setRequestProperty("Cache-Control", "only-if-cached");
     assertResponseHeader(connection2, "NONE");
+  }
+
+  @Test public void getPermissionTest() throws IOException {
+    HttpURLConnection connection = factory.open(server.url("/").url());
+    System.out.print(connection.getPermission().getName());
+
   }
 
   @Test

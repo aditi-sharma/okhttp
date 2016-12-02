@@ -435,7 +435,8 @@ public final class HostnameVerifierTest {
 
   }
 
-  @Test public void testHostname() throws Exception {
+  //@Test
+  public void testHostname() throws Exception {
 
       X509Certificate certificate = certificate("-----BEGIN CERTIFICATE-----\n" +
               "MIIDCzCCAfOgAwIBAgIJAOnFgS2/lIp4MA0GCSqGSIb3DQEBBQUAMA0xCzAJBgNV\n" +

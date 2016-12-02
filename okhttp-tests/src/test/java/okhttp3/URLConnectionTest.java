@@ -276,7 +276,7 @@ public final class URLConnectionTest {
 
   @Test public void streamedBodyIsNotRetried() throws Exception {
     server.enqueue(new MockResponse()
-        .setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST));
+            .setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST));
 
     urlFactory = new OkUrlFactory(defaultClient().newBuilder()
         .dns(new DoubleInetAddressDns())
@@ -654,10 +654,10 @@ public final class URLConnectionTest {
     server.enqueue(new MockResponse().setSocketPolicy(FAIL_HANDSHAKE));
 
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .dns(new SingleInetAddressDns())
-        .hostnameVerifier(new RecordingHostnameVerifier())
-        .sslSocketFactory(suppressTlsFallbackClientSocketFactory(), sslClient.trustManager)
-        .build());
+            .dns(new SingleInetAddressDns())
+            .hostnameVerifier(new RecordingHostnameVerifier())
+            .sslSocketFactory(suppressTlsFallbackClientSocketFactory(), sslClient.trustManager)
+            .build());
     connection = urlFactory.open(server.url("/foo").url());
 
     try {
@@ -750,15 +750,15 @@ public final class URLConnectionTest {
 
   @Test public void contentDisagreesWithContentLengthHeaderBodyTooLong() throws IOException {
     server.enqueue(new MockResponse().setBody("abc\r\nYOU SHOULD NOT SEE THIS")
-        .clearHeaders()
-        .addHeader("Content-Length: 3"));
+            .clearHeaders()
+            .addHeader("Content-Length: 3"));
     assertContent("abc", urlFactory.open(server.url("/").url()));
   }
 
   @Test public void contentDisagreesWithContentLengthHeaderBodyTooShort() throws IOException {
     server.enqueue(new MockResponse().setBody("abc")
-        .setHeader("Content-Length", "5")
-        .setSocketPolicy(DISCONNECT_AT_END));
+            .setHeader("Content-Length", "5")
+            .setSocketPolicy(DISCONNECT_AT_END));
     try {
       readAscii(urlFactory.open(server.url("/").url()).getInputStream(), 5);
       fail();
@@ -950,12 +950,12 @@ public final class URLConnectionTest {
     // Configure a single IP address for the host and a single configuration, so we only need one
     // failure to fail permanently.
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .dns(new SingleInetAddressDns())
-        .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
-        .connectionSpecs(Util.immutableList(ConnectionSpec.MODERN_TLS))
-        .hostnameVerifier(new RecordingHostnameVerifier())
-        .proxy(server.toProxyAddress())
-        .build());
+            .dns(new SingleInetAddressDns())
+            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+            .connectionSpecs(Util.immutableList(ConnectionSpec.MODERN_TLS))
+            .hostnameVerifier(new RecordingHostnameVerifier())
+            .proxy(server.toProxyAddress())
+            .build());
 
     URL url = new URL("https://android.com/foo");
     connection = urlFactory.open(url);
@@ -1012,17 +1012,17 @@ public final class URLConnectionTest {
     Authenticator.setDefault(new RecordingAuthenticator());
     server.useHttps(sslClient.socketFactory, true);
     server.enqueue(new MockResponse().setResponseCode(407)
-        .addHeader("Proxy-Authenticate: Basic realm=\"localhost\""));
+            .addHeader("Proxy-Authenticate: Basic realm=\"localhost\""));
     server.enqueue(
-        new MockResponse().setSocketPolicy(UPGRADE_TO_SSL_AT_END).clearHeaders());
+            new MockResponse().setSocketPolicy(UPGRADE_TO_SSL_AT_END).clearHeaders());
     server.enqueue(new MockResponse().setBody("A"));
 
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .proxyAuthenticator(new JavaNetAuthenticator())
-        .proxy(server.toProxyAddress())
-        .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
-        .hostnameVerifier(new RecordingHostnameVerifier())
-        .build());
+            .proxyAuthenticator(new JavaNetAuthenticator())
+            .proxy(server.toProxyAddress())
+            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+            .hostnameVerifier(new RecordingHostnameVerifier())
+            .build());
 
     URL url = new URL("https://android.com/foo");
     connection = urlFactory.open(url);
@@ -1047,14 +1047,14 @@ public final class URLConnectionTest {
   @Test public void proxyWithConnectionClose() throws IOException {
     server.useHttps(sslClient.socketFactory, true);
     server.enqueue(
-        new MockResponse().setSocketPolicy(UPGRADE_TO_SSL_AT_END).clearHeaders());
+            new MockResponse().setSocketPolicy(UPGRADE_TO_SSL_AT_END).clearHeaders());
     server.enqueue(new MockResponse().setBody("this response comes via a proxy"));
 
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .proxy(server.toProxyAddress())
-        .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
-        .hostnameVerifier(new RecordingHostnameVerifier())
-        .build());
+            .proxy(server.toProxyAddress())
+            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+            .hostnameVerifier(new RecordingHostnameVerifier())
+            .build());
 
     URL url = new URL("https://android.com/foo");
     connection = urlFactory.open(url);
@@ -1191,8 +1191,8 @@ public final class URLConnectionTest {
 
   @Test public void nonHexChunkSize() throws IOException {
     server.enqueue(new MockResponse().setBody("5\r\nABCDE\r\nG\r\nFGHIJKLMNOPQRSTU\r\n0\r\n\r\n")
-        .clearHeaders()
-        .addHeader("Transfer-encoding: chunked"));
+            .clearHeaders()
+            .addHeader("Transfer-encoding: chunked"));
 
     URLConnection connection = urlFactory.open(server.url("/").url());
     try {
@@ -1343,8 +1343,8 @@ public final class URLConnectionTest {
 
   @Test public void transparentGzipWorksAfterExceptionRecovery() throws Exception {
     server.enqueue(new MockResponse()
-        .setBody("a")
-        .setSocketPolicy(SHUTDOWN_INPUT_AT_END));
+            .setBody("a")
+            .setSocketPolicy(SHUTDOWN_INPUT_AT_END));
     server.enqueue(new MockResponse()
         .addHeader("Content-Encoding: gzip")
         .setBody(gzip("b")));
@@ -1365,9 +1365,9 @@ public final class URLConnectionTest {
   @Test public void endOfStreamResponseIsNotPooled() throws Exception {
     urlFactory.client().connectionPool().evictAll();
     server.enqueue(new MockResponse()
-        .setBody("{}")
-        .clearHeaders()
-        .setSocketPolicy(DISCONNECT_AT_END));
+            .setBody("{}")
+            .clearHeaders()
+            .setSocketPolicy(DISCONNECT_AT_END));
 
     HttpURLConnection connection = urlFactory.open(server.url("/").url());
     assertContent("{}", connection);
@@ -1410,8 +1410,8 @@ public final class URLConnectionTest {
   @Test public void streamDiscardingIsTimely() throws Exception {
     // This response takes at least a full second to serve: 10,000 bytes served 100 bytes at a time.
     server.enqueue(new MockResponse()
-        .setBody(new Buffer().write(new byte[10000]))
-        .throttleBody(100, 10, MILLISECONDS));
+            .setBody(new Buffer().write(new byte[10000]))
+            .throttleBody(100, 10, MILLISECONDS));
     server.enqueue(new MockResponse().setBody("A"));
 
     long startNanos = System.nanoTime();
@@ -2188,6 +2188,7 @@ public final class URLConnectionTest {
     server.enqueue(new MockResponse().setBody("Proxy Response"));
 
     connection = urlFactory.open(server.url("/foo").url());
+    assertFalse(connection.usingProxy());
     // Fails on the RI, which gets "Proxy Response"
     assertEquals("This page has moved!", readAscii(connection.getInputStream(), Integer.MAX_VALUE));
 
@@ -3443,7 +3444,6 @@ public final class URLConnectionTest {
     server.enqueue(new MockResponse());
     URLConnection urlConnection =
         urlFactory.open(new URL("http://and roid.com/"), server.toProxyAddress());
-
     try {
       // This test is to check that a NullPointerException is not thrown.
       urlConnection.getInputStream();

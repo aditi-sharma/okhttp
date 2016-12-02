@@ -15,20 +15,6 @@
  */
 package okhttp3.internal.huc;
 
-import java.io.IOException;
-import java.net.CacheRequest;
-import java.net.CacheResponse;
-import java.net.HttpURLConnection;
-import java.net.ResponseCache;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 import okhttp3.AbstractResponseCache;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
@@ -43,10 +29,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import java.io.IOException;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 /**
  * A white-box test for {@link CacheAdapter}. See also:
@@ -100,6 +92,17 @@ public class CacheAdapterTest {
     connection.setRequestProperty("key1", "value1");
 
     executeGet(connection);
+  }
+
+  @Test public void validateResponseCacheDelegation() throws Exception {
+    ResponseCache responseCache = new AbstractResponseCache() {
+      @Override public CacheResponse get(URI uri, String method, Map<String, List<String>> headers)
+              throws IOException {
+        return null;
+      }
+    };
+    CacheAdapter cacheAdapter = new CacheAdapter(responseCache);
+    assert (cacheAdapter.getDelegate().equals(responseCache));
   }
 
   @Test public void get_httpsGet() throws Exception {
