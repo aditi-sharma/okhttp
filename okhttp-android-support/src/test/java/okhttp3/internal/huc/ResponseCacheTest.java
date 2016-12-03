@@ -16,51 +16,7 @@
 
 package okhttp3.internal.huc;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.CacheRequest;
-import java.net.CacheResponse;
-import java.net.CookieManager;
-import java.net.HttpCookie;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.ResponseCache;
-import java.net.SecureCacheResponse;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.security.Principal;
-import java.security.cert.Certificate;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import okhttp3.AbstractResponseCache;
-import okhttp3.AndroidInternal;
-import okhttp3.AndroidShimResponseCache;
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.OkUrlFactory;
-import okhttp3.RecordingHostnameVerifier;
+import okhttp3.*;
 import okhttp3.internal.Internal;
 import okhttp3.internal.cache.InternalCache;
 import okhttp3.internal.tls.SslClient;
@@ -78,12 +34,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.*;
 import static org.junit.Assume.assumeFalse;
 
 /**
@@ -1998,11 +1964,12 @@ public final class ResponseCacheTest {
     connection1.setSSLSocketFactory(sslClient.socketFactory);
     connection1.setHostnameVerifier(hostnameVerifier);
     assertEquals("ABC", readAscii(connection1));
-
     // Not cached!
     HttpsURLConnection connection2 = (HttpsURLConnection) openConnection(server.url("/").url());
     connection2.setSSLSocketFactory(sslClient.socketFactory);
     connection2.setHostnameVerifier(hostnameVerifier);
+      assertEquals(connection1.getHostnameVerifier(), connection2.getHostnameVerifier());
+      assertEquals(connection1.getSSLSocketFactory(),connection2.getSSLSocketFactory());
     assertEquals("DEF", readAscii(connection2));
   }
 

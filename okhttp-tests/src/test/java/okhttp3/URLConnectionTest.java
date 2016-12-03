@@ -152,12 +152,24 @@ public final class URLConnectionTest {
     assertEquals("value2", connection.getRequestProperty("A"));
   }
 
+  @Test public void getConnectionFields() throws Exception {
+    connection = urlFactory.open(server.url("/").url());
+    connection.setIfModifiedSince(10);
+    connection.setAllowUserInteraction(true);
+    connection.setConnectTimeout(100);
+    connection.setDoInput(false);
+    connection.setDoOutput(true);
+    connection.setDefaultUseCaches(true);
+    connection.setUseCaches(false);
+    //connection.getHeaderField(2);
+  }
+
   @Test public void responseHeaders() throws IOException, InterruptedException {
     server.enqueue(new MockResponse().setStatus("HTTP/1.0 200 Fantastic")
-        .addHeader("A: c")
-        .addHeader("B: d")
-        .addHeader("A: e")
-        .setChunkedBody("ABCDE\nFGHIJ\nKLMNO\nPQR", 8));
+            .addHeader("A: c")
+            .addHeader("B: d")
+            .addHeader("A: e")
+            .setChunkedBody("ABCDE\nFGHIJ\nKLMNO\nPQR", 8));
 
     connection = urlFactory.open(server.url("/").url());
     assertEquals(200, connection.getResponseCode());
@@ -418,6 +430,7 @@ public final class URLConnectionTest {
     }
     // sequence number 0 means the HTTP socket connection was not reused
     assertEquals(0, requestAfter.getSequenceNumber());
+    assertEquals(100,connection1.getReadTimeout());
   }
 
   enum WriteKind {BYTE_BY_BYTE, SMALL_BUFFERS, LARGE_BUFFERS}
@@ -555,7 +568,7 @@ public final class URLConnectionTest {
 
   private void connectViaHttpsReusingConnections(boolean rebuildClient) throws Exception {
     server.useHttps(sslClient.socketFactory, false);
-    server.enqueue(new MockResponse().setBody("this response comes via HTTPS"));
+    server.enqueue(new MockResponse().setBody("this response comes via HTTPS").addHeader("Content-type","plain/html"));
     server.enqueue(new MockResponse().setBody("another response via HTTPS"));
 
     // The pool will only reuse sockets if the SSL socket factories are the same.
@@ -573,7 +586,13 @@ public final class URLConnectionTest {
         .hostnameVerifier(hostnameVerifier)
         .build());
     connection = urlFactory.open(server.url("/").url());
+    assertEquals(29, connection.getContentLength());
+    assertNull(connection.getContentEncoding());
+    assertFalse(connection.getAllowUserInteraction());
+    assertEquals("plain/html", connection.getContentType());
+    assertNull(connection.getErrorStream());
     assertContent("this response comes via HTTPS", connection);
+    assertTrue(connection.toString().contains("https://localhost"));
 
     if (rebuildClient) {
       urlFactory.setClient(new OkHttpClient.Builder()
@@ -587,7 +606,7 @@ public final class URLConnectionTest {
 
     connection = urlFactory.open(server.url("/").url());
     assertContent("another response via HTTPS", connection);
-
+    assertEquals("OK", connection.getResponseMessage().toString());
     assertEquals(0, server.takeRequest().getSequenceNumber());
     assertEquals(1, server.takeRequest().getSequenceNumber());
   }
@@ -880,7 +899,8 @@ public final class URLConnectionTest {
         .hostnameVerifier(new RecordingHostnameVerifier())
         .build());
     connection = proxyConfig.connect(server, urlFactory, url);
-
+    assertFalse(connection.usingProxy());
+    assertTrue(connection.getPermission().getName().contains("localhost"));
     assertContent("this response comes via HTTPS", connection);
 
     RecordedRequest request = server.takeRequest();
@@ -2256,6 +2276,7 @@ public final class URLConnectionTest {
 
     if (method.equals("GET")) {
       assertEquals("Page 2", response);
+      assertFalse(connection.getDoOutput());
     } else if (method.equals("HEAD")) {
       assertEquals("", response);
     } else {
@@ -2336,9 +2357,10 @@ public final class URLConnectionTest {
     enqueueClientRequestTimeoutResponses();
 
     HttpURLConnection connection = urlFactory.open(server.url("/").url());
-
+    connection.setConnectTimeout(100000);
     assertEquals(200, connection.getResponseCode());
     assertEquals("Body", readAscii(connection.getInputStream(), Integer.MAX_VALUE));
+    assertEquals(100000,connection.getConnectTimeout());
   }
 
   private void enqueueClientRequestTimeoutResponses() {
@@ -2671,6 +2693,8 @@ public final class URLConnectionTest {
     InputStream in = (InputStream) connection.getContent();
     assertEquals("A", readAscii(in, Integer.MAX_VALUE));
   }
+
+
 
   @Test public void getContentOfType() throws Exception {
     server.enqueue(new MockResponse().addHeader("Content-Type: text/plain").setBody("A"));
@@ -3066,7 +3090,7 @@ public final class URLConnectionTest {
     assertEquals(Arrays.asList(new Challenge("Basic", "protected area")), response.challenges());
   }
 
-  //@Test
+  @Test
   public void customBasicMultipleRealmsAuthenticator() throws Exception{
     MockResponse pleaseAuthenticate = new MockResponse().setResponseCode(401)
             .addHeader("WWW-Authenticate: Basic realm=\"protected area\" , New Realm=\"test realm\"")
