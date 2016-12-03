@@ -15,6 +15,18 @@
  */
 package okhttp3.internal.huc;
 
+import okhttp3.*;
+import okhttp3.internal.Internal;
+import okhttp3.internal.Util;
+import okhttp3.mockwebserver.MockWebServer;
+import okio.Buffer;
+import okio.BufferedSource;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,40 +41,9 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import okhttp3.CipherSuite;
-import okhttp3.Handshake;
-import okhttp3.Headers;
-import okhttp3.MediaType;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-import okhttp3.internal.Internal;
-import okhttp3.internal.Util;
-import okhttp3.mockwebserver.MockWebServer;
-import okio.Buffer;
-import okio.BufferedSource;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.*;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class JavaApiConverterTest {
 
@@ -131,6 +112,33 @@ public class JavaApiConverterTest {
     assertEquals("HelloWorld", response.body().string());
     assertNull(response.handshake());
   }
+
+
+
+  @Test (expected = NullPointerException.class)
+  public void createOkResponseForCacheGet_NullHeaders() throws Exception {
+    final String statusLine = "HTTP/1.1 200 Fantastic";
+    URI uri = new URI("http://foo/bar");
+    Request request = new Request.Builder().url(uri.toURL()).build();
+    CacheResponse cacheResponse = new CacheResponse() {
+      @Override public Map<String, List<String>> getHeaders() throws IOException {
+        Map<String, List<String>> headers = new LinkedHashMap<>();
+          headers.put(null, Collections.singletonList(statusLine));
+          headers.put("null header", null);
+          return headers;
+      }
+
+      @Override public InputStream getBody() throws IOException {
+        return new ByteArrayInputStream("Null Header".getBytes(StandardCharsets.UTF_8));
+      }
+    };
+
+    Response response = JavaApiConverter.createOkResponseForCacheGet(request, cacheResponse);
+    Request cacheRequest = response.request();
+    assertEquals(request.url(), cacheRequest.url());
+
+  }
+
 
   /** Test for https://code.google.com/p/android/issues/detail?id=160522 */
   @Test public void createOkResponseForCacheGet_withMissingStatusLine() throws Exception {
@@ -515,7 +523,7 @@ public class JavaApiConverterTest {
         .addHeader("key1", "value1_2")
         .body(null)
         .build();
-    CacheResponse javaCacheResponse = JavaApiConverter.createJavaCacheResponse(okResponse);
+    CacheResponse javaCacheResponse =  JavaApiConverter.createJavaCacheResponse(okResponse);
     assertFalse(javaCacheResponse instanceof SecureCacheResponse);
     Map<String, List<String>> javaHeaders = javaCacheResponse.getHeaders();
     assertEquals(Arrays.asList("value1_1", "value1_2"), javaHeaders.get("key1"));

@@ -15,34 +15,20 @@
  */
 package okhttp3.internal.ws;
 
+import okhttp3.*;
+import okio.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ProtocolException;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import okhttp3.MediaType;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.ByteString;
-import okio.Okio;
-import okio.Sink;
-import okio.Source;
-import okio.Timeout;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import static okhttp3.WebSocket.TEXT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public final class RealWebSocketTest {
   // NOTE: Fields are named 'client' and 'server' for cognitive simplicity. This differentiation has
@@ -143,6 +129,15 @@ public final class RealWebSocketTest {
     server.processNextFrame(); // Read the ping, write the pong.
     client.processNextFrame(); // Read the pong.
     clientListener.assertPong(ByteString.encodeUtf8("Hello!"));
+  }
+
+  @Test (expected = AssertionError.class)
+  public void pingPongreply() throws IOException {
+    client.ping(ByteString.encodeUtf8("Hey!"));
+    server.processNextFrame();
+    server.onReadPing(ByteString.encodeUtf8("Hey! Again"));
+    client.processNextFrame();
+    client.onReadPong(ByteString.encodeUtf8("Cool!"));
   }
 
   @Test public void unsolicitedPong() throws IOException {
