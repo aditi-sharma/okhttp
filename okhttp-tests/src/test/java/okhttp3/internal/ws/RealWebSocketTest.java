@@ -131,13 +131,12 @@ public final class RealWebSocketTest {
     clientListener.assertPong(ByteString.encodeUtf8("Hello!"));
   }
 
-  @Test (expected = AssertionError.class)
-  public void pingPongreply() throws IOException {
+
+ @Test public void pingPongreply() throws IOException {
     client.ping(ByteString.encodeUtf8("Hey!"));
-    server.processNextFrame();
     server.onReadPing(ByteString.encodeUtf8("Hey! Again"));
-    client.processNextFrame();
     client.onReadPong(ByteString.encodeUtf8("Cool!"));
+    clientListener.assertPong(ByteString.encodeUtf8("Cool!"));
   }
 
   @Test public void unsolicitedPong() throws IOException {

@@ -15,30 +15,21 @@
  */
 package okhttp3.internal.ws;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.util.Random;
 import okhttp3.RequestBody;
 import okhttp3.internal.Util;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.ByteString;
-import okio.Okio;
-import okio.Sink;
+import okio.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import static okhttp3.internal.ws.WebSocketProtocol.OPCODE_BINARY;
-import static okhttp3.internal.ws.WebSocketProtocol.OPCODE_TEXT;
-import static okhttp3.internal.ws.WebSocketProtocol.PAYLOAD_BYTE_MAX;
-import static okhttp3.internal.ws.WebSocketProtocol.PAYLOAD_SHORT_MAX;
-import static okhttp3.internal.ws.WebSocketProtocol.toggleMask;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.Random;
+
+import static okhttp3.internal.ws.WebSocketProtocol.*;
+import static org.junit.Assert.*;
 
 public final class WebSocketWriterTest {
   private final Buffer data = new Buffer();
@@ -103,6 +94,7 @@ public final class WebSocketWriterTest {
     assertData(Util.format("%04x", length));
     assertData(bytes);
     assertTrue(data.exhausted());
+
   }
 
   @Test public void serverLargeNonBufferedPayloadWrittenAsMultipleFrames() throws IOException {
@@ -222,7 +214,6 @@ public final class WebSocketWriterTest {
     assertData("027f"); // 'f' == 16-byte follow-up length.
     assertData(Util.format("%016X", byteCount));
     assertData(payload.readByteArray(byteCount));
-
     sink.close();
     assertData("8000");
   }
@@ -374,9 +365,11 @@ public final class WebSocketWriterTest {
   }
 
   @Test public void twoMessageSinksThrows() {
-    clientWriter.newMessageSink(OPCODE_TEXT, -1);
+    Timeout time1= clientWriter.newMessageSink(OPCODE_TEXT, -1).timeout();
+
     try {
-      clientWriter.newMessageSink(OPCODE_TEXT, -1);
+      Timeout time2 = clientWriter.newMessageSink(OPCODE_TEXT, -1).timeout();
+      assertEquals(time1,time2);
       fail();
     } catch (IllegalStateException e) {
       assertEquals("Another message writer is active. Did you call close()?", e.getMessage());
