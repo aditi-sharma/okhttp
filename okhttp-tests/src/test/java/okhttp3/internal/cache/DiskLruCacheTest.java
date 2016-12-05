@@ -15,16 +15,6 @@
  */
 package okhttp3.internal.cache;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.Executor;
 import okhttp3.internal.io.FaultyFileSystem;
 import okhttp3.internal.io.FileSystem;
 import okio.BufferedSink;
@@ -38,16 +28,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.Timeout;
 
-import static okhttp3.internal.cache.DiskLruCache.JOURNAL_FILE;
-import static okhttp3.internal.cache.DiskLruCache.JOURNAL_FILE_BACKUP;
-import static okhttp3.internal.cache.DiskLruCache.MAGIC;
-import static okhttp3.internal.cache.DiskLruCache.VERSION_1;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.Executor;
+
+import static okhttp3.internal.cache.DiskLruCache.*;
+import static org.junit.Assert.*;
 
 public final class DiskLruCacheTest {
   @Rule public final TemporaryFolder tempDir = new TemporaryFolder();
@@ -90,6 +77,13 @@ public final class DiskLruCacheTest {
 
   @Test public void emptyCache() throws Exception {
     cache.close();
+    assertJournalEquals();
+  }
+
+  @Test public void emptyCache1() throws Exception {
+    //DiskLruCache newCache = new DiskLruCache(fileSystem, cacheDir, appVersion, 2, Integer.MAX_VALUE-1, executor);
+    createNewCacheWithSize(Integer.MAX_VALUE-1);
+
     assertJournalEquals();
   }
 

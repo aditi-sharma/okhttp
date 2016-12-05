@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Square, Inc.
+ * Copyright (C) 2016 Square, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,52 +15,101 @@
  */
 package okhttp3;
 
-import java.io.IOException;
 import okio.ByteString;
 
-/** Blocking interface to connect and write to a web socket. This class is not thread safe. */
+/**
+ * A non-blocking interface to a web socket. Use the {@linkplain WebSocket.Factory factory} to
+ * create instances; usually this is {@link OkHttpClient}.
+ *
+ * <h3>Web Socket Lifecycle</h3>
+ *
+ * Upon normal operation each web socket progresses through a sequence of states:
+ *
+ * <ul>
+ *   <li><strong>Connecting:</strong> the initial state of each web socket. Messages may be enqueued
+ *       but they won't be transmitted until the web socket is open.
+ *   <li><strong>Open:</strong> the web socket has been accepted by the remote peer and is fully
+ *       operational. Messages in either direction are enqueued for immediate transmission.
+ *   <li><strong>Closing:</strong> one of the peers on the web socket has initiated a graceful
+ *       shutdown. The web socket will continue to transmit already-enqueued messages but will
+ *       refuse to enqueue new ones.
+ *   <li><strong>Closed:</strong> the web socket has transmitted all of its messages and has
+ *       received all messages from the peer.
+ * </ul>
+ *
+ * Web sockets may fail due to HTTP upgrade problems, connectivity problems, or if either peer
+ * chooses to short-circuit the graceful shutdown process:
+ *
+ * <ul>
+ *   <li><strong>Canceled:</strong> the web socket connection failed. Messages that were
+ *       successfully enqueued by either peer may not have been transmitted to the other.
+ * </ul>
+ *
+ * Note that the state progression is independent for each peer. Arriving at a gracefully-closed
+ * state indicates that a peer has sent all of its outgoing messages and received all of its
+ * incoming messages. But it does not guarantee that the other peer will successfully receive all of
+ * its incoming messages.
+ */
 public interface WebSocket {
-  /** A {@link MediaType} indicating UTF-8 text frames should be used when sending the message. */
-  MediaType TEXT = MediaType.parse("application/vnd.okhttp.websocket+text; charset=utf-8");
-  /** A {@link MediaType} indicating binary frames should be used when sending the message. */
-  MediaType BINARY = MediaType.parse("application/vnd.okhttp.websocket+binary");
+  /** Returns the original request that initiated this web socket. */
+  Request request();
 
   /**
-   * Send a message to the server.
-   *
-   * @param message The message body. The {@linkplain RequestBody#contentType() content type} of
-   * must be either {@link #TEXT} or {@link #BINARY}.
-   * @throws IOException if unable to write the message. Clients must call {@link #close} when this
-   * happens to ensure resources are cleaned up.
-   * @throws IllegalStateException if this web socket was already closed.
+   * Returns the size in bytes of all messages enqueued to be transmitted to the server. This
+   * doesn't include framing overhead. It also doesn't include any bytes buffered by the operating
+   * system or network intermediaries. This method returns 0 if no messages are waiting
+   * in the queue. If may return a nonzero value after the web socket has been canceled; this
+   * indicates that enqueued messages were not transmitted.
    */
-  void message(RequestBody message) throws IOException;
+  long queueSize();
 
   /**
-   * Send a ping to the server.
+   * Attempts to enqueue {@code text} to be UTF-8 encoded and sent as a the data of a text (type
+   * {@code 0x1}) message.
    *
-   * @param payload Ping payload which must not exceed 125 bytes. Use {@link ByteString#EMPTY} for
-   * no payload.
-   * @throws IOException if unable to write the ping.  Clients must call {@link #close} when this
-   * happens to ensure resources are cleaned up.
-   * @throws IllegalStateException if this web socket was already closed.
+   * <p>This method returns true if the message was enqueued. Messages that would overflow the
+   * outgoing message buffer will be rejected and trigger a {@linkplain #close graceful shutdown} of
+   * this web socket. This method returns false in that case, and in any other case where this
+   * web socket is closing, closed, or canceled.
+   *
+   * <p>This method returns immediately.
    */
-  void ping(ByteString payload) throws IOException;
+  boolean send(String text);
 
   /**
-   * Send a close indicator to the server.
+   * Attempts to enqueue {@code bytes} to be sent as a the data of a binary (type {@code 0x2})
+   * message.
    *
-   * <p>The corresponding {@link WebSocketListener} will continue to get messages until its {@link
-   * WebSocketListener#onClose onClose()} method is called.
+   * <p>This method returns true if the message was enqueued. Messages that would overflow the
+   * outgoing message buffer will be rejected and trigger a {@linkplain #close graceful shutdown} of
+   * this web socket. This method returns false in that case, and in any other case where this
+   * web socket is closing, closed, or canceled.
    *
-   * <p>It is an error to call this method before calling close on an active writer. Calling this
-   * method more than once has no effect.
+   * <p>This method returns immediately.
+   */
+  boolean send(ByteString bytes);
+
+  /**
+   * Attempts to initiate a graceful shutdown of this web socket. Any already-enqueued messages will
+   * be transmitted before the close message is sent but subsequent calls to {@link #send} will
+   * return false and their messages will not be enqueued.
+   *
+   * <p>This returns true if a graceful shutdown was initiated by this call. It returns false and if
+   * a graceful shutdown was already underway or if the web socket is already closed or canceled.
    *
    * @param code Status code as defined by <a
    * href="http://tools.ietf.org/html/rfc6455#section-7.4">Section 7.4 of RFC 6455</a> or {@code 0}.
    * @param reason Reason for shutting down or {@code null}.
-   * @throws IOException if unable to write the close message. Resources will still be freed.
-   * @throws IllegalStateException if this web socket was already closed.
    */
-  void close(int code, String reason) throws IOException;
+  boolean close(int code, String reason);
+
+  /**
+   * Immediately and violently release resources held by this web socket, discarding any enqueued
+   * messages. This does nothing if the web socket has already been closed or canceled.
+   */
+  void cancel();
+
+  interface Factory {
+    WebSocket newWebSocket(Request request, WebSocketListener listener);
+  }
 }

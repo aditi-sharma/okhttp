@@ -22,10 +22,11 @@ import com.squareup.moshi.ToJson;
 import java.io.IOException;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
+import okhttp3.WebSocket;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.WebSocketCall;
+import okhttp3.WebSocketListener;
 import okio.ByteString;
 
 /**
@@ -33,7 +34,7 @@ import okio.ByteString;
  * instance of this class may operate without a user, or on behalf of many users. Use the Slack API
  * dashboard to create a client ID and secret for this application.
  *
- * <p>You must configure your Slack API OAuth & Permissions page with a localhost URL like {@code
+ * <p>You must configure your Slack API OAuth and Permissions page with a localhost URL like {@code
  * http://localhost:53203/oauth/}, passing the same port to this class’ constructor.
  */
 public final class SlackApi {
@@ -105,10 +106,10 @@ public final class SlackApi {
   }
 
   /** See https://api.slack.com/rtm. */
-  public WebSocketCall rtm(HttpUrl url) {
-    return httpClient.newWebSocketCall(new Request.Builder()
+  public WebSocket rtm(HttpUrl url, WebSocketListener listener) {
+    return httpClient.newWebSocket(new Request.Builder()
         .url(url)
-        .build());
+        .build(), listener);
   }
 
   static final class SlackJsonAdapters {

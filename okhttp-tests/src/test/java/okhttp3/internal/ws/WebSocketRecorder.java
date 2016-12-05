@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Square, Inc.
+ * Copyright (C) 2016 Square, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,23 +19,19 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import okhttp3.MediaType;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
+import okhttp3.internal.Util;
 import okhttp3.internal.platform.Platform;
-import okio.Buffer;
 import okio.ByteString;
 
-import static okhttp3.WebSocket.BINARY;
-import static okhttp3.WebSocket.TEXT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public final class WebSocketRecorder implements WebSocketListener {
+public final class WebSocketRecorder extends WebSocketListener {
   private final String name;
   private final BlockingQueue<Object> events = new LinkedBlockingQueue<>();
   private WebSocketListener delegate;
@@ -61,52 +57,63 @@ public final class WebSocketRecorder implements WebSocketListener {
     }
   }
 
-  @Override public void onMessage(ResponseBody message) throws IOException {
+  @Override public void onMessage(WebSocket webSocket, ByteString bytes) {
     Platform.get().log(Platform.INFO, "[WS " + name + "] onMessage", null);
 
     WebSocketListener delegate = this.delegate;
     if (delegate != null) {
       this.delegate = null;
-      delegate.onMessage(message);
+      delegate.onMessage(webSocket, bytes);
     } else {
-      Message event = new Message(message.contentType());
-      message.source().readAll(event.buffer);
-      message.close();
+      Message event = new Message(bytes);
       events.add(event);
     }
   }
 
-  @Override public void onPong(ByteString payload) {
-    Platform.get().log(Platform.INFO, "[WS " + name + "] onPong", null);
+  @Override public void onMessage(WebSocket webSocket, String text) {
+    Platform.get().log(Platform.INFO, "[WS " + name + "] onMessage", null);
 
     WebSocketListener delegate = this.delegate;
     if (delegate != null) {
       this.delegate = null;
-      delegate.onPong(payload);
+      delegate.onMessage(webSocket, text);
     } else {
-      events.add(new Pong(payload));
+      Message event = new Message(text);
+      events.add(event);
     }
   }
 
-  @Override public void onClose(int code, String reason) {
+  @Override public void onClosing(WebSocket webSocket, int code, String reason) {
     Platform.get().log(Platform.INFO, "[WS " + name + "] onClose " + code, null);
 
     WebSocketListener delegate = this.delegate;
     if (delegate != null) {
       this.delegate = null;
-      delegate.onClose(code, reason);
+      delegate.onClosing(webSocket, code, reason);
     } else {
-      events.add(new Close(code, reason));
+      events.add(new Closing(code, reason));
     }
   }
 
-  @Override public void onFailure(Throwable t, Response response) {
+  @Override public void onClosed(WebSocket webSocket, int code, String reason) {
+    Platform.get().log(Platform.INFO, "[WS " + name + "] onClose " + code, null);
+
+    WebSocketListener delegate = this.delegate;
+    if (delegate != null) {
+      this.delegate = null;
+      delegate.onClosed(webSocket, code, reason);
+    } else {
+      events.add(new Closed(code, reason));
+    }
+  }
+
+  @Override public void onFailure(WebSocket webSocket, Throwable t, Response response)  {
     Platform.get().log(Platform.INFO, "[WS " + name + "] onFailure", t);
 
     WebSocketListener delegate = this.delegate;
     if (delegate != null) {
       this.delegate = null;
-      delegate.onFailure(t, response);
+      delegate.onFailure(webSocket, t, response);
     } else {
       events.add(new Failure(t, response));
     }
@@ -125,17 +132,18 @@ public final class WebSocketRecorder implements WebSocketListener {
   }
 
   public void assertTextMessage(String payload) {
-    Message message = new Message(TEXT);
-    message.buffer.writeUtf8(payload);
     Object actual = nextEvent();
-    assertEquals(message, actual);
+    assertEquals(new Message(payload), actual);
   }
 
-  public void assertBinaryMessage(byte[] payload) {
-    Message message = new Message(BINARY);
-    message.buffer.write(payload);
+  public void assertBinaryMessage(ByteString payload) {
     Object actual = nextEvent();
-    assertEquals(message, actual);
+    assertEquals(new Message(payload), actual);
+  }
+
+  public void assertPing(ByteString payload) {
+    Object actual = nextEvent();
+    assertEquals(new Ping(payload), actual);
   }
 
   public void assertPong(ByteString payload) {
@@ -143,9 +151,14 @@ public final class WebSocketRecorder implements WebSocketListener {
     assertEquals(new Pong(payload), actual);
   }
 
-  public void assertClose(int code, String reason) {
+  public void assertClosing(int code, String reason) {
     Object actual = nextEvent();
-    assertEquals(new Close(code, reason), actual);
+    assertEquals(new Closing(code, reason), actual);
+  }
+
+  public void assertClosed(int code, String reason) {
+    Object actual = nextEvent();
+    assertEquals(new Closed(code, reason), actual);
   }
 
   public void assertExhausted() {
@@ -181,6 +194,13 @@ public final class WebSocketRecorder implements WebSocketListener {
     assertEquals(message, failure.t.getMessage());
   }
 
+  public void assertFailure() {
+    Object event = nextEvent();
+    if (!(event instanceof Failure)) {
+      throw new AssertionError("Expected Failure but was " + event);
+    }
+  }
+
   public void assertFailure(int code, String body, Class<? extends IOException> cls, String message)
       throws IOException {
     Object event = nextEvent();
@@ -190,10 +210,35 @@ public final class WebSocketRecorder implements WebSocketListener {
     Failure failure = (Failure) event;
     assertEquals(code, failure.response.code());
     if (body != null) {
-      assertEquals(body, failure.response.body().string());
+      assertEquals(body, failure.responseBody);
     }
     assertEquals(cls, failure.t.getClass());
     assertEquals(message, failure.t.getMessage());
+  }
+
+  /** Expose this recorder as a frame callback and shim in "ping" events. */
+  public WebSocketReader.FrameCallback asFrameCallback() {
+    return new WebSocketReader.FrameCallback() {
+      @Override public void onReadMessage(String text) throws IOException {
+        onMessage(null, text);
+      }
+
+      @Override public void onReadMessage(ByteString bytes) throws IOException {
+        onMessage(null, bytes);
+      }
+
+      @Override public void onReadPing(ByteString payload) {
+        events.add(new Ping(payload));
+      }
+
+      @Override public void onReadPong(ByteString payload) {
+        events.add(new Pong(payload));
+      }
+
+      @Override public void onReadClose(int code, String reason) {
+        onClosing(null, code, reason);
+      }
+    };
   }
 
   static final class Open {
@@ -213,10 +258,19 @@ public final class WebSocketRecorder implements WebSocketListener {
   static final class Failure {
     final Throwable t;
     final Response response;
+    final String responseBody;
 
     Failure(Throwable t, Response response) {
       this.t = t;
       this.response = response;
+      String responseBody = null;
+      if (response != null) {
+        try {
+          responseBody = response.body().string();
+        } catch (IOException ignored) {
+        }
+      }
+      this.responseBody = responseBody;
     }
 
     @Override public String toString() {
@@ -228,34 +282,59 @@ public final class WebSocketRecorder implements WebSocketListener {
   }
 
   static final class Message {
-    public final MediaType mediaType;
-    public final Buffer buffer = new Buffer();
+    public final ByteString bytes;
+    public final String string;
 
-    Message(MediaType mediaType) {
-      this.mediaType = mediaType;
+    public Message(ByteString bytes) {
+      this.bytes = bytes;
+      this.string = null;
+    }
+
+    public Message(String string) {
+      this.bytes = null;
+      this.string = string;
     }
 
     @Override public String toString() {
-      return "Message[" + mediaType + " " + buffer + "]";
+      return "Message[" + (bytes != null ? bytes : string) + "]";
     }
 
     @Override public int hashCode() {
-      return mediaType.hashCode() * 37 + buffer.hashCode();
+      return (bytes != null ? bytes : string).hashCode();
     }
 
-    @Override public boolean equals(Object obj) {
-      if (obj instanceof Message) {
-        Message other = (Message) obj;
-        return mediaType.equals(other.mediaType) && buffer.equals(other.buffer);
-      }
-      return false;
+    @Override public boolean equals(Object other) {
+      return other instanceof Message
+          && Util.equal(((Message) other).bytes, bytes)
+          && Util.equal(((Message) other).string, string);
+    }
+  }
+
+  static final class Ping {
+    public final ByteString payload;
+
+    public Ping(ByteString payload) {
+      this.payload = payload;
+    }
+
+    @Override public String toString() {
+      return "Ping[" + payload + "]";
+    }
+
+    @Override public int hashCode() {
+      return payload.hashCode();
+    }
+
+    @Override public boolean equals(Object other) {
+      return other instanceof Ping
+          && ((Ping) other).payload.equals(payload);
     }
   }
 
   static final class Pong {
     public final ByteString payload;
 
-    Pong(ByteString payload) {
+    public Pong(ByteString payload) {
       this.payload = payload;
     }
 
@@ -267,88 +346,57 @@ public final class WebSocketRecorder implements WebSocketListener {
       return payload.hashCode();
     }
 
-    @Override public boolean equals(Object obj) {
-      if (obj instanceof Pong) {
-        Pong other = (Pong) obj;
-        return payload == null ? other.payload == null : payload.equals(other.payload);
-      }
-      return false;
+    @Override public boolean equals(Object other) {
+      return other instanceof Pong
+          && ((Pong) other).payload.equals(payload);
     }
   }
 
-  static final class Close {
+  static final class Closing {
     public final int code;
     public final String reason;
 
-    Close(int code, String reason) {
+    Closing(int code, String reason) {
       this.code = code;
       this.reason = reason;
     }
 
     @Override public String toString() {
-      return "Close[" + code + " " + reason + "]";
+      return "Closing[" + code + " " + reason + "]";
     }
 
     @Override public int hashCode() {
       return code * 37 + reason.hashCode();
     }
 
-    @Override public boolean equals(Object obj) {
-      if (obj instanceof Close) {
-        Close other = (Close) obj;
-        return code == other.code && reason.equals(other.reason);
-      }
-      return false;
+    @Override public boolean equals(Object other) {
+      return other instanceof Closing
+          && ((Closing) other).code == code
+          && ((Closing) other).reason.equals(reason);
     }
   }
 
-  /** Expose this recorder as a frame callback and shim in "ping" events. */
-  WebSocketReader.FrameCallback asFrameCallback() {
-    return new WebSocketReader.FrameCallback() {
-      @Override public void onReadMessage(ResponseBody body) throws IOException {
-        onMessage(body);
-      }
+  static final class Closed {
+    public final int code;
+    public final String reason;
 
-      @Override public void onReadPing(ByteString payload) {
-        events.add(new Ping(payload));
-      }
-
-      @Override public void onReadPong(ByteString padload) {
-        onPong(padload);
-      }
-
-      @Override public void onReadClose(int code, String reason) {
-        onClose(code, reason);
-      }
-    };
-  }
-
-  void assertPing(ByteString payload) {
-    Object actual = nextEvent();
-    assertEquals(new Ping(payload), actual);
-  }
-
-  static final class Ping {
-    public final ByteString buffer;
-
-    Ping(ByteString buffer) {
-      this.buffer = buffer;
+    Closed(int code, String reason) {
+      this.code = code;
+      this.reason = reason;
     }
 
     @Override public String toString() {
-      return "Ping[" + buffer + "]";
+      return "Closed[" + code + " " + reason + "]";
     }
 
     @Override public int hashCode() {
-      return buffer.hashCode();
+      return code * 37 + reason.hashCode();
     }
 
-    @Override public boolean equals(Object obj) {
-      if (obj instanceof Ping) {
-        Ping other = (Ping) obj;
-        return buffer == null ? other.buffer == null : buffer.equals(other.buffer);
-      }
-      return false;
+    @Override public boolean equals(Object other) {
+      return other instanceof Closed
+          && ((Closed) other).code == code
+          && ((Closed) other).reason.equals(reason);
     }
   }
 }

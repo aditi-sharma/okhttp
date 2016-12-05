@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import okhttp3.Headers;
+import okhttp3.WebSocketListener;
 import okhttp3.internal.Internal;
 import okhttp3.internal.http2.Settings;
-import okhttp3.WebSocketListener;
 import okio.Buffer;
 
 /** A scripted response to be replayed by the mock web server. */

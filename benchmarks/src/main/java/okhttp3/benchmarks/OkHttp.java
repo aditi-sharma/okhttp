@@ -15,23 +15,19 @@
  */
 package okhttp3.benchmarks;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+import okhttp3.*;
+import okhttp3.internal.tls.SslClient;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
-import okhttp3.Call;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.ResponseBody;
-import okhttp3.internal.tls.SslClient;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 class OkHttp extends SynchronousHttpClient {
   private static final boolean VERBOSE = false;
 
   private OkHttpClient client;
-
   @Override public void prepare(Benchmark benchmark) {
     super.prepare(benchmark);
     client = new OkHttpClient.Builder()
