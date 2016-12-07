@@ -15,32 +15,17 @@
  */
 package okhttp3.internal.http2;
 
+import okio.Buffer;
+import okio.BufferedSink;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
-import okio.Buffer;
-import okio.BufferedSink;
 
 import static java.util.logging.Level.FINE;
 import static okhttp3.internal.Util.format;
-import static okhttp3.internal.http2.Http2.CONNECTION_PREFACE;
-import static okhttp3.internal.http2.Http2.FLAG_ACK;
-import static okhttp3.internal.http2.Http2.FLAG_END_HEADERS;
-import static okhttp3.internal.http2.Http2.FLAG_END_STREAM;
-import static okhttp3.internal.http2.Http2.FLAG_NONE;
-import static okhttp3.internal.http2.Http2.INITIAL_MAX_FRAME_SIZE;
-import static okhttp3.internal.http2.Http2.TYPE_CONTINUATION;
-import static okhttp3.internal.http2.Http2.TYPE_DATA;
-import static okhttp3.internal.http2.Http2.TYPE_GOAWAY;
-import static okhttp3.internal.http2.Http2.TYPE_HEADERS;
-import static okhttp3.internal.http2.Http2.TYPE_PING;
-import static okhttp3.internal.http2.Http2.TYPE_PUSH_PROMISE;
-import static okhttp3.internal.http2.Http2.TYPE_RST_STREAM;
-import static okhttp3.internal.http2.Http2.TYPE_SETTINGS;
-import static okhttp3.internal.http2.Http2.TYPE_WINDOW_UPDATE;
-import static okhttp3.internal.http2.Http2.frameLog;
-import static okhttp3.internal.http2.Http2.illegalArgument;
+import static okhttp3.internal.http2.Http2.*;
 
 /** Writes HTTP/2 transport frames. */
 final class Http2Writer implements Closeable {

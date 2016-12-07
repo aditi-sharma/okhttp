@@ -15,23 +15,17 @@
  */
 package okhttp3;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import okhttp3.internal.Internal;
 import okhttp3.internal.http.HttpHeaders;
 import okhttp3.internal.http2.Header;
 import okhttp3.internal.http2.Http2Codec;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.util.*;
+
 import static okhttp3.TestUtil.headerEntries;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public final class HeadersTest {
   static {
@@ -58,10 +52,11 @@ public final class HeadersTest {
         .header("Upgrade", "websocket")
         .build();
     List<Header> expected = headerEntries(
-        ":method", "GET",
-        ":path", "/",
-        ":authority", "square.com",
-        ":scheme", "http");
+            ":method", "GET",
+            ":path", "/",
+            ":authority", "square.com",
+            ":scheme", "http");
+
     assertEquals(expected, Http2Codec.http2HeadersList(request));
   }
 

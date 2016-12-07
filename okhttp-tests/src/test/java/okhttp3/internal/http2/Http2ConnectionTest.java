@@ -15,43 +15,38 @@
  */
 package okhttp3.internal.http2;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import okhttp3.Address;
+import okhttp3.ConnectionSpec;
+import okhttp3.Dns;
+import okhttp3.Protocol;
+import okhttp3.internal.RecordingOkAuthenticator;
 import okhttp3.internal.Util;
 import okhttp3.internal.http2.MockHttp2Peer.InFrame;
-import okio.AsyncTimeout;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.Okio;
-import okio.Sink;
-import okio.Source;
+import okio.*;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 
+import javax.net.SocketFactory;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.ProxySelector;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static okhttp3.TestUtil.headerEntries;
 import static okhttp3.TestUtil.repeat;
 import static okhttp3.internal.Util.EMPTY_BYTE_ARRAY;
-import static okhttp3.internal.http2.Settings.DEFAULT_INITIAL_WINDOW_SIZE;
-import static okhttp3.internal.http2.Settings.ENABLE_PUSH;
-import static okhttp3.internal.http2.Settings.HEADER_TABLE_SIZE;
-import static okhttp3.internal.http2.Settings.INITIAL_WINDOW_SIZE;
-import static okhttp3.internal.http2.Settings.MAX_CONCURRENT_STREAMS;
-import static okhttp3.internal.http2.Settings.MAX_FRAME_SIZE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static okhttp3.internal.http2.Settings.*;
+import static org.junit.Assert.*;
 
 public final class Http2ConnectionTest {
   private final MockHttp2Peer peer = new MockHttp2Peer();
@@ -91,6 +86,7 @@ public final class Http2ConnectionTest {
     Ping ping = connection.ping();
     assertTrue(ping.roundTripTime() > 0);
     assertTrue(ping.roundTripTime() < TimeUnit.SECONDS.toNanos(1));
+    assertEquals("h2", connection.getProtocol().toString());
 
     // verify the peer received what was expected
     InFrame pingFrame = peer.takeFrame();
@@ -431,13 +427,13 @@ public final class Http2ConnectionTest {
   @Test public void pushPromiseStreamsAutomaticallyCancel() throws Exception {
     // write the mocking script
     peer.sendFrame().pushPromise(3, 2, Arrays.asList(
-        new Header(Header.TARGET_METHOD, "GET"),
-        new Header(Header.TARGET_SCHEME, "https"),
-        new Header(Header.TARGET_AUTHORITY, "squareup.com"),
-        new Header(Header.TARGET_PATH, "/cached")
+            new Header(Header.TARGET_METHOD, "GET"),
+            new Header(Header.TARGET_SCHEME, "https"),
+            new Header(Header.TARGET_AUTHORITY, "squareup.com"),
+            new Header(Header.TARGET_PATH, "/cached")
     ));
     peer.sendFrame().synReply(true, 2, Arrays.asList(
-        new Header(Header.RESPONSE_STATUS, "200")
+            new Header(Header.RESPONSE_STATUS, "200")
     ));
     peer.acceptFrame(); // RST_STREAM
     peer.play();
@@ -651,7 +647,6 @@ public final class Http2ConnectionTest {
 
     // play it back
     Http2Connection connection = connection(peer);
-
     assertEquals(Http2.TYPE_SETTINGS, peer.takeFrame().type);
     assertEquals(Http2.TYPE_SETTINGS, peer.takeFrame().type);
     assertEquals(Http2.TYPE_PING, peer.takeFrame().type);
@@ -673,7 +668,6 @@ public final class Http2ConnectionTest {
     peer.sendFrame().ping(false, 2, 0);
     peer.acceptFrame();
     peer.play();
-
     // play it back
     Http2Connection connection = connection(peer);
 
@@ -1027,6 +1021,31 @@ public final class Http2ConnectionTest {
     assertTrue(Arrays.equals("abcdef".getBytes("UTF-8"), data1.data));
   }
 
+  @Test (expected = ConnectionShutdownException.class)
+  public void connectionShutdownBeforeSettings() throws IOException {
+    peer.acceptFrame(); // SYN_STREAM 1
+    peer.play();
+
+    Http2Connection connection = connection(peer);
+    connection.newStream(headerEntries("a", "android"), false);
+    connection.shutdown(ErrorCode.REFUSED_STREAM);
+    connection.setSettings(new Settings().set(Settings.ENABLE_PUSH, 1));
+
+  }
+
+  @Test
+  public void http2connectionMergeSettingstest() throws IOException, InterruptedException {
+    peer.acceptFrame(); // DATA STREAM 1
+    peer.play();
+
+    Http2Connection connection = connection(peer);
+    Settings settings = new Settings();
+    settings.set(Settings.MAX_CONCURRENT_STREAMS, 2);
+    connection.setSettings(settings);
+    peer.acceptFrame();
+    assertEquals(2, connection.okHttpSettings.getMaxConcurrentStreams(4));
+  }
+
   @Test public void sendGoAway() throws Exception {
     // write the mocking script
     peer.acceptFrame(); // SYN_STREAM 1
@@ -1042,6 +1061,7 @@ public final class Http2ConnectionTest {
     Ping ping = connection.ping();
     connection.shutdown(ErrorCode.PROTOCOL_ERROR);
     assertEquals(1, connection.openStreamCount());
+    assertTrue(connection.isShutdown());
     ping.roundTripTime(); // Prevent the peer from exiting prematurely.
 
     // verify the peer received what was expected
@@ -1100,6 +1120,7 @@ public final class Http2ConnectionTest {
       fail();
     } catch (IOException expected) {
       assertEquals("stream finished", expected.getMessage());
+      assertEquals("CANCEL", stream.getErrorCode().toString());
     }
     try {
       stream.getSource().read(new Buffer(), 1);
@@ -1426,6 +1447,7 @@ public final class Http2ConnectionTest {
     }
   }
 
+
   @Test public void blockedStreamDoesntStarveNewStream() throws Exception {
     int framesThatFillWindow = roundUp(DEFAULT_INITIAL_WINDOW_SIZE, peer.maxOutboundDataLength());
 
@@ -1588,4 +1610,13 @@ public final class Http2ConnectionTest {
       notifyAll();
     }
   }
+
+  private Address newAddress(String name) {
+    return new Address(name, 1, Dns.SYSTEM, SocketFactory.getDefault(), null, null, null,
+            new RecordingOkAuthenticator("password"), null, Collections.<Protocol>emptyList(),
+            Collections.<ConnectionSpec>emptyList(),
+            ProxySelector.getDefault());
+  }
+
+
 }

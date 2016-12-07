@@ -34,6 +34,22 @@ public class Http2ServerTest {
         server.onStream(stream);
     }
 
+    @Test (expected = NullPointerException.class)
+    public void http2ServerRequireConnectionPreface() throws IOException {
+        peer.acceptFrame(); // SYN_STREAM
+        peer.play();
+
+        Header header1 = new Header(":Content-type","text/html");
+        Header header2 = new Header(":path","/text.html");
+        Http2Connection connection =  new Http2Connection.Builder(true)
+                .socket(peer.openSocket())
+                .pushObserver(IGNORE).build();
+        connection.start(true);
+        Http2Stream stream = connection.newStream(Arrays.asList(header1, header2), true);
+        server.onStream(stream);
+        assertEquals("[:status: 404, :version: HTTP/1.1, content-type: text/plain]", connection.getStream(stream.getId()).getResponseHeaders().toString());
+    }
+
     @Test public void http2Server404() throws IOException {
         peer.acceptFrame(); // SYN_STREAM
         peer.play();

@@ -15,30 +15,19 @@
  */
 package okhttp3.internal.http2;
 
+import okhttp3.Protocol;
+import okhttp3.internal.NamedRunnable;
+import okhttp3.internal.Util;
+import okhttp3.internal.platform.Platform;
+import okio.*;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import okhttp3.Protocol;
-import okhttp3.internal.NamedRunnable;
-import okhttp3.internal.Util;
-import okhttp3.internal.platform.Platform;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
-import okio.ByteString;
-import okio.Okio;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static okhttp3.internal.http2.Settings.DEFAULT_INITIAL_WINDOW_SIZE;
 import static okhttp3.internal.platform.Platform.INFO;
@@ -238,7 +227,6 @@ public final class Http2Connection implements Closeable {
     if (flushHeaders) {
       writer.flush();
     }
-
     return stream;
   }
 

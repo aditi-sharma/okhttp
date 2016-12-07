@@ -3149,8 +3149,8 @@ public final class URLConnectionTest {
 
     RecordingOkAuthenticator authenticator = new RecordingOkAuthenticator("oauthed abc123");
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .authenticator(authenticator)
-        .build());
+            .authenticator(authenticator)
+            .build());
     assertContent("A", urlFactory.open(server.url("/private").url()));
 
     assertNull(server.takeRequest().getHeader("Authorization"));
@@ -3166,15 +3166,15 @@ public final class URLConnectionTest {
         .setResponseCode(302)
         .addHeader("Location: /b"));
     server.enqueue(new MockResponse()
-        .setResponseCode(401)
-        .addHeader("WWW-Authenticate: Basic realm=\"protected area\""));
+            .setResponseCode(401)
+            .addHeader("WWW-Authenticate: Basic realm=\"protected area\""));
     server.enqueue(new MockResponse().setBody("c"));
 
     RecordingOkAuthenticator authenticator = new RecordingOkAuthenticator(
         Credentials.basic("jesse", "peanutbutter"));
     urlFactory.setClient(urlFactory.client().newBuilder()
-        .authenticator(authenticator)
-        .build());
+            .authenticator(authenticator)
+            .build());
     assertContent("c", urlFactory.open(server.url("/a").url()));
 
     Response challengeResponse = authenticator.responses.get(0);
