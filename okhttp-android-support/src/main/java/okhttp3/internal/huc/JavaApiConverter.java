@@ -15,33 +15,7 @@
  */
 package okhttp3.internal.huc;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.CacheResponse;
-import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.SecureCacheResponse;
-import java.net.URI;
-import java.net.URLConnection;
-import java.security.Principal;
-import java.security.cert.Certificate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSocketFactory;
-import okhttp3.CipherSuite;
-import okhttp3.Handshake;
-import okhttp3.Headers;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import okhttp3.*;
 import okhttp3.internal.Internal;
 import okhttp3.internal.JavaNetHeaders;
 import okhttp3.internal.Util;
@@ -53,6 +27,21 @@ import okhttp3.internal.platform.Platform;
 import okio.BufferedSource;
 import okio.Okio;
 import okio.Sink;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.*;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper methods that convert between Java and OkHttp representations.

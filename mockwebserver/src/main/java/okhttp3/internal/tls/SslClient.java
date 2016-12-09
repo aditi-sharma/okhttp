@@ -15,6 +15,7 @@
  */
 package okhttp3.internal.tls;
 
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
@@ -28,12 +29,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * Combines an SSL socket factory and trust manager, a pairing enough for OkHttp or MockWebServer to
@@ -162,7 +157,7 @@ public final class SslClient {
         keyStore.load(in, password);
         return keyStore;
       } catch (IOException e) {
-        throw new AssertionError(e);
+          throw new AssertionError(e);
       }
     }
   }

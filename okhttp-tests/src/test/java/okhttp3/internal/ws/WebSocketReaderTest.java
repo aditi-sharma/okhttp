@@ -15,20 +15,19 @@
  */
 package okhttp3.internal.ws;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.ProtocolException;
-import java.util.Random;
-import java.util.regex.Pattern;
 import okhttp3.internal.Util;
 import okio.Buffer;
 import okio.ByteString;
 import org.junit.After;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.io.EOFException;
+import java.io.IOException;
+import java.net.ProtocolException;
+import java.util.Random;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
 
 public final class WebSocketReaderTest {
   private final Buffer data = new Buffer();

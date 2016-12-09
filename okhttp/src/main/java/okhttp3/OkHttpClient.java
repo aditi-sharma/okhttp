@@ -15,6 +15,19 @@
  */
 package okhttp3;
 
+import okhttp3.internal.Internal;
+import okhttp3.internal.Util;
+import okhttp3.internal.cache.InternalCache;
+import okhttp3.internal.connection.RealConnection;
+import okhttp3.internal.connection.RouteDatabase;
+import okhttp3.internal.connection.StreamAllocation;
+import okhttp3.internal.platform.Platform;
+import okhttp3.internal.tls.CertificateChainCleaner;
+import okhttp3.internal.tls.OkHostnameVerifier;
+import okhttp3.internal.ws.RealWebSocket;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.*;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.ProxySelector;
@@ -28,24 +41,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.net.SocketFactory;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import okhttp3.internal.Internal;
-import okhttp3.internal.Util;
-import okhttp3.internal.cache.InternalCache;
-import okhttp3.internal.connection.RealConnection;
-import okhttp3.internal.connection.RouteDatabase;
-import okhttp3.internal.connection.StreamAllocation;
-import okhttp3.internal.platform.Platform;
-import okhttp3.internal.tls.CertificateChainCleaner;
-import okhttp3.internal.tls.OkHostnameVerifier;
-import okhttp3.internal.ws.RealWebSocket;
 
 /**
  * Factory for {@linkplain Call calls}, which can be used to send HTTP requests and read their
