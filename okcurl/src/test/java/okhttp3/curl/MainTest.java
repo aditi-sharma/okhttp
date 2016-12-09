@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 
 import static okhttp3.curl.Main.fromArgs;
 import static org.junit.Assert.*;
@@ -33,12 +34,12 @@ public class MainTest {
 
   @Before
   public void setUpStreams() {
-   // System.setOut(new PrintStream(outContent));
+    System.setOut(new PrintStream(outContent));
     }
 
   @After
   public void cleanUpStreams(){
-  //  System.setOut(null);
+    System.setOut(null);
   }
 
   @Test public void simple() {
