@@ -138,12 +138,6 @@ public class OkUrlFactoryTest {
     assertResponseHeader(connection2, "NONE");
   }
 
-  @Test public void getPermissionTest() throws IOException {
-    HttpURLConnection connection = factory.open(server.url("/").url());
-    System.out.print(connection.getPermission().getName());
-
-  }
-
   @Test
   public void setInstanceFollowRedirectsFalse() throws Exception {
     server.enqueue(new MockResponse()

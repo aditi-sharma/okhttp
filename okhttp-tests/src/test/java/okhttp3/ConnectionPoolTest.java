@@ -172,8 +172,6 @@ public final class ConnectionPoolTest {
     assertTrue(c1.noNewStreams); // Can't allocate once a leak has been detected.
   }
 
-  @Test
-
   /** Use a helper method so there's no hidden reference remaining on the stack. */
   private void allocateAndLeakAllocation(ConnectionPool pool, RealConnection connection) {
     synchronized (pool) {

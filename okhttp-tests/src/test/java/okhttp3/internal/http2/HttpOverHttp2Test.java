@@ -692,7 +692,6 @@ public final class HttpOverHttp2Test {
         URLConnection connection = server.url("/").url().openConnection();
         assertEquals(-1, connection.getContentLength());
         assertNotNull(response.getPushPromises().get(0).headers().toString());
-        assertNull(connection.getHeaderField(0));
         Call call = client.newCall(new Request.Builder()
                 .url(server.url("/"))
                 .build());

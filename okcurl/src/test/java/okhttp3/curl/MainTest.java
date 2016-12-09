@@ -24,23 +24,21 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 
 import static okhttp3.curl.Main.fromArgs;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class MainTest {
   private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
 
   @Before
   public void setUpStreams() {
-    System.setOut(new PrintStream(outContent));}
+   // System.setOut(new PrintStream(outContent));
+    }
 
   @After
   public void cleanUpStreams(){
-    System.setOut(null);
+  //  System.setOut(null);
   }
 
   @Test public void simple() {
@@ -115,6 +113,7 @@ public class MainTest {
   @Test public void insecureRequest(){
     fromArgs("-d", "Sample Test 2", "--frames", "true", "-i", "true", "-X", "POST", "-k", "true", "-H", "Content-Type: application/json", "-H", "If-Modified-Since: Mon, 18 Aug 2014 15:16:06 GMT", "http://example.com").run();
     assertTrue(outContent.toString().contains("HTTP/1.1 304 Not Modified"));
+    assertTrue(outContent.toString().contains("Accept-Ranges: bytes"));
   }
 
   private static String bodyAsString(RequestBody body) {
