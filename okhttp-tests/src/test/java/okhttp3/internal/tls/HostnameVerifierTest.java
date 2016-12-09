@@ -418,6 +418,7 @@ public final class HostnameVerifierTest {
 
   }
 
+
   @Test public void emptySubjectAltNames() throws Exception{
 
       X509Certificate certificate = certificate(""
@@ -433,33 +434,6 @@ public final class HostnameVerifierTest {
               + "-----END CERTIFICATE-----");
       assertTrue (OkHostnameVerifier.allSubjectAltNames(certificate).isEmpty());
 
-  }
-
-  //@Test
-  public void testHostname() throws Exception {
-
-      X509Certificate certificate = certificate("-----BEGIN CERTIFICATE-----\n" +
-              "MIIDCzCCAfOgAwIBAgIJAOnFgS2/lIp4MA0GCSqGSIb3DQEBBQUAMA0xCzAJBgNV\n" +
-              "BAMUAi5cMB4XDTE2MTEyOTA1MDkxNFoXDTI2MTEyNzA1MDkxNFowDTELMAkGA1UE\n" +
-              "AxQCLlwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDqy5Yqm1HG2Ica\n" +
-              "WGwlBYfgNiSpwEEnMzGyttmGujyNh4Jr0RKOdqJLB524tyGGjGod/OAWOmXaRK8s\n" +
-              "5zat2Glvs3EV+i1DE2GjxwiNPeca1o0GqfU2iDtc92CqUOsYxG1VFG5Wrc5A2Snq\n" +
-              "i0NRHQS4y4ov6SPqMenfh1s4alwFSVsRlhRHSRrK3YLrrA/7ehIfbt0/1gkxq2Q1\n" +
-              "wD0M0ioIwf6/6RNa2IMCCwYvr32/qx9GHx+G27/Wdjkh1TsyJjAMaNtMYYQfUbtY\n" +
-              "hAOMUegE+YB+6jt0KzMKM4VH5sO+g2Ex+YB2Ej1igQh77kPl+4yrlExx0yK1EgIU\n" +
-              "DQE6eZeXAgMBAAGjbjBsMB0GA1UdDgQWBBSlAPR3zt52Viw7nEtnoTfrwLnDSzA9\n" +
-              "BgNVHSMENjA0gBSlAPR3zt52Viw7nEtnoTfrwLnDS6ERpA8wDTELMAkGA1UEAxQC\n" +
-              "LlyCCQDpxYEtv5SKeDAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4IBAQBz\n" +
-              "NGKxNs+G7ypCcSJzqHLyGgnBeCmeY0Vq0N9LEmWNumUW5C9lzwJzR34C5avm3/E0\n" +
-              "NZDVeQGmIS0ago3Z3yYJ2XUSquc3ypLQ7KBF2/XmyIPYzxlHf6TZkgrG2zK5t1Av\n" +
-              "aSDF9UtDdRpyM8vnMAjDHZK4SMOzmW/8yUrDC7Lax5JprcP1TRgbwy0Lxvt3Dp4R\n" +
-              "OlJYJDxUe7lfOXsB92/h4dBOqsCoDEcQ6tiaWDf2i79l4MeeEwnrDQ7w8qBp00Ub\n" +
-              "YjvCXiGMHQ7RiCYaoxKQsHaWvb53Ark+a1oCH0IiRbgQDhQXV5KNHqCwwM4i9u4x\n" +
-              "TFtJKqovSGOOoG4X0/+5\n" +
-              "-----END CERTIFICATE-----");
-      X500Principal principal = certificate.getSubjectX500Principal();
-      String cn = new DistinguishedNameParser(principal).findMostSpecific("cn");
-      System.out.println(cn);
   }
 
   @Test public void wildcardsCannotMatchIpAddresses() throws Exception {

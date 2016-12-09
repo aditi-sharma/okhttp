@@ -1116,7 +1116,7 @@ public final class CallTest {
         .build();
     Request request2 = new Request.Builder().url(server.url("/")).build();
     Response response2 = client.newCall(request2).execute();
-    assertNotSame(response2.handshake(), response1.handshake());
+      assertNotSame(response2.handshake().hashCode(), response1.handshake().hashCode());
     response2.body().close();
   }
 

@@ -102,7 +102,7 @@ public class CacheAdapterTest {
       }
     };
     CacheAdapter cacheAdapter = new CacheAdapter(responseCache);
-    assert (cacheAdapter.getDelegate().equals(responseCache));
+    assertTrue (cacheAdapter.getDelegate().equals(responseCache));
   }
 
   @Test public void get_httpsGet() throws Exception {

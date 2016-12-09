@@ -15,13 +15,12 @@
  */
 package okhttp3.internal.http2;
 
-import okhttp3.Address;
-import okhttp3.ConnectionSpec;
-import okhttp3.Dns;
-import okhttp3.Protocol;
+import okhttp3.*;
 import okhttp3.internal.RecordingOkAuthenticator;
 import okhttp3.internal.Util;
+import okhttp3.internal.connection.StreamAllocation;
 import okhttp3.internal.http2.MockHttp2Peer.InFrame;
+import okhttp3.mockwebserver.MockWebServer;
 import okio.*;
 import org.junit.After;
 import org.junit.Rule;
@@ -42,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static okhttp3.TestUtil.defaultClient;
 import static okhttp3.TestUtil.headerEntries;
 import static okhttp3.TestUtil.repeat;
 import static okhttp3.internal.Util.EMPTY_BYTE_ARRAY;
@@ -1149,7 +1149,7 @@ public final class Http2ConnectionTest {
     Http2Connection connection = connection(peer);
     Ping ping = connection.ping();
     connection.close();
-    assertEquals(-1, ping.roundTripTime());
+    assertEquals(-1, ping.roundTripTime(500,TimeUnit.MILLISECONDS));
   }
 
   @Test public void getResponseHeadersTimesOut() throws Exception {
@@ -1447,6 +1447,24 @@ public final class Http2ConnectionTest {
     }
   }
 
+
+  @Test public void Http2CodecTest() throws IOException {
+    peer.acceptFrame();
+    peer.play();
+
+    MockWebServer server = new MockWebServer();
+    Address addressA = newAddress("a");
+    Http2Connection connection = connection(peer);
+    ConnectionPool pool = new ConnectionPool(Integer.MAX_VALUE, 100L, TimeUnit.NANOSECONDS);
+    StreamAllocation streamAllocation = new StreamAllocation(pool, addressA, null);
+    Http2Codec codec = new Http2Codec(defaultClient(), streamAllocation, connection);
+    Request request = new Request.Builder().url(server.url("/")).build();
+    codec.writeRequestHeaders(request);
+    codec.createRequestBody(request, 10);
+    Response response = new Response.Builder().request(request).protocol(Protocol.HTTP_2).code(200).addHeader("Content-type","plain/html").addHeader(":path","/temp").message("ABCDDE").build();
+    assertEquals("plain/html",codec.openResponseBody(response).contentType().toString());
+    codec.finishRequest();
+  }
 
   @Test public void blockedStreamDoesntStarveNewStream() throws Exception {
     int framesThatFillWindow = roundUp(DEFAULT_INITIAL_WINDOW_SIZE, peer.maxOutboundDataLength());

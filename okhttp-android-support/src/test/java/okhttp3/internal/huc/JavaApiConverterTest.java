@@ -133,9 +133,7 @@ public class JavaApiConverterTest {
       }
     };
 
-    Response response = JavaApiConverter.createOkResponseForCacheGet(request, cacheResponse);
-    Request cacheRequest = response.request();
-    assertEquals(request.url(), cacheRequest.url());
+    JavaApiConverter.createOkResponseForCacheGet(request, cacheResponse);
 
   }
 

@@ -15,6 +15,11 @@
  */
 package okhttp3;
 
+import okhttp3.UrlComponentEncodingTester.Component;
+import okhttp3.UrlComponentEncodingTester.Encoding;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -22,15 +27,9 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import okhttp3.UrlComponentEncodingTester.Component;
-import okhttp3.UrlComponentEncodingTester.Encoding;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public final class HttpUrlTest {
   @Test public void parseTrimsAsciiWhitespace() throws Exception {

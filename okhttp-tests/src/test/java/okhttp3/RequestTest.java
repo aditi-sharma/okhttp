@@ -17,6 +17,7 @@ package okhttp3;
 
 import okhttp3.internal.Util;
 import okio.Buffer;
+import okio.ByteString;
 import org.junit.Test;
 
 import java.io.File;
@@ -61,6 +62,15 @@ public final class RequestTest {
     assertEquals(3, body.contentLength());
     assertEquals("616263", bodyToHex(body));
     assertEquals("Retransmit body", "616263", bodyToHex(body));
+  }
+
+  @Test public void byteString() throws Exception {
+    MediaType contentType = MediaType.parse("text/plain");
+    RequestBody body = RequestBody.create(contentType, ByteString.encodeUtf8("ab??cd"));
+    assertEquals(contentType, body.contentType());
+    assertEquals(6, body.contentLength());
+    assertEquals("61623f3f6364", bodyToHex(body));
+    assertEquals("Retransmit body", "61623f3f6364", bodyToHex(body));
   }
 
   @Test public void byteArrayRange() throws Exception {

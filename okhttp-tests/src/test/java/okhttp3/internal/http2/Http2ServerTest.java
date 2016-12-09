@@ -23,18 +23,7 @@ public class Http2ServerTest {
     SSLSocketFactory sslFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
     Http2Server server = new Http2Server(file, sslFactory);
 
-    @Test (expected = AssertionError.class)
-    public void http2ServerEmptyPathHeader() throws Exception {
-
-        File file = new File("testDir");
-        Http2Server server = new Http2Server(file, sslFactory);
-        Header header1 = new Header(":Content-type","text/html");
-        Http2Connection connection = new Http2Connection(new Http2Connection.Builder(true));
-        Http2Stream stream = new Http2Stream(1,connection,true,true, Arrays.asList(header1));
-        server.onStream(stream);
-    }
-
-    @Test (expected = NullPointerException.class)
+    @Test (expected = Exception.class)
     public void http2ServerRequireConnectionPreface() throws IOException {
         peer.acceptFrame(); // SYN_STREAM
         peer.play();

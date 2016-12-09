@@ -79,14 +79,7 @@ public final class DiskLruCacheTest {
     cache.close();
     assertJournalEquals();
   }
-
-  @Test public void emptyCache1() throws Exception {
-    //DiskLruCache newCache = new DiskLruCache(fileSystem, cacheDir, appVersion, 2, Integer.MAX_VALUE-1, executor);
-    createNewCacheWithSize(Integer.MAX_VALUE-1);
-
-    assertJournalEquals();
-  }
-
+  
   @Test public void validateKey() throws Exception {
     String key = null;
     try {

@@ -686,17 +686,19 @@ public final class HttpOverHttp2Test {
     @Test public void PushPromiseServerConnectionViaHttp2() throws Exception {
         PushPromise pushPromise = new PushPromise("GET", "/foo/bar", Headers.of("foo", "bar"),
                 new MockResponse().setBody("bar").setStatus("HTTP/1.1 200 Sweet"));
-        server.enqueue(new MockResponse()
-                .withPush(pushPromise));
+        MockResponse response = new MockResponse()
+                .withPush(pushPromise);
+        server.enqueue(response);
         URLConnection connection = server.url("/").url().openConnection();
         assertEquals(-1, connection.getContentLength());
-
+        assertNotNull(response.getPushPromises().get(0).headers().toString());
+        assertNull(connection.getHeaderField(0));
         Call call = client.newCall(new Request.Builder()
                 .url(server.url("/"))
                 .build());
-        Response response = call.execute();
-        assertEquals(response.headers().toString(), "content-length: 0\n");
-        response.close();
+        Response response1 = call.execute();
+        assertEquals(response1.headers().toString(), "content-length: 0\n");
+        response1.close();
     }
 
   @Test public void serverSendsPushPromise_GET() throws Exception {

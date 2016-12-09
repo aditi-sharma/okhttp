@@ -107,13 +107,13 @@ public class MainTest {
     assertEquals("Mon, 18 Aug 2014 15:16:06 GMT", request.header("If-Modified-Since"));
   }
 
-  @Test public void sampleRequestProtocols(){
+  @Test public void getRequestProtocols(){
     fromArgs("-d", "Sample Test", "--frames", "true", "-i", "true", "-X", "POST", "-V", "true", "-H", "Content-Type: application/json", "-H", "If-Modified-Since: Mon, 18 Aug 2014 15:16:06 GMT", "http://example.com").run();
     assertTrue(outContent.toString().contains("Protocols: http/1.0, http/1.1, spdy/3.1, h2"));
   }
 
-  @Test public void sampleInsecureRequest(){
-    fromArgs("-d", "Sample Test", "--frames", "true", "-i", "true", "-X", "POST", "-k", "true", "-H", "Content-Type: application/json", "-H", "If-Modified-Since: Mon, 18 Aug 2014 15:16:06 GMT", "http://example.com").run();
+  @Test public void insecureRequest(){
+    fromArgs("-d", "Sample Test 2", "--frames", "true", "-i", "true", "-X", "POST", "-k", "true", "-H", "Content-Type: application/json", "-H", "If-Modified-Since: Mon, 18 Aug 2014 15:16:06 GMT", "http://example.com").run();
     assertTrue(outContent.toString().contains("HTTP/1.1 304 Not Modified"));
   }
 
