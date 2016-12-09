@@ -15,10 +15,11 @@
  */
 package okhttp3;
 
-import java.io.IOException;
 import okio.Buffer;
 import okio.BufferedSink;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static okhttp3.internal.Util.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +50,7 @@ public final class MultipartBodyTest {
     assertEquals("123", body.boundary());
     assertEquals(MultipartBody.MIXED, body.type());
     assertEquals("multipart/mixed; boundary=123", body.contentType().toString());
-    assertEquals(1, body.parts().size());
+    assertEquals(1, body.size());
     assertEquals(53, body.contentLength());
 
     Buffer buffer = new Buffer();

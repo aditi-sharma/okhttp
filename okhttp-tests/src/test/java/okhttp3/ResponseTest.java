@@ -15,13 +15,10 @@
  */
 package okhttp3;
 
-import java.io.IOException;
-import okio.Buffer;
-import okio.BufferedSource;
-import okio.Okio;
-import okio.Source;
-import okio.Timeout;
+import okio.*;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -95,6 +92,7 @@ public final class ResponseTest {
             .build())
         .protocol(Protocol.HTTP_1_1)
         .code(200)
+            .header("Content-type","plain/html")
         .body(responseBody)
         .build();
   }

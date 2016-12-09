@@ -15,23 +15,22 @@
  */
 package okhttp3;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.Socket;
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
-import javax.net.SocketFactory;
 import okhttp3.internal.Internal;
 import okhttp3.internal.RecordingOkAuthenticator;
 import okhttp3.internal.connection.RealConnection;
 import okhttp3.internal.connection.StreamAllocation;
 import org.junit.Test;
 
+import javax.net.SocketFactory;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
+import java.net.Socket;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
 import static okhttp3.TestUtil.awaitGarbageCollection;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public final class ConnectionPoolTest {
   private final Address addressA = newAddress("a");
@@ -172,6 +171,8 @@ public final class ConnectionPoolTest {
 
     assertTrue(c1.noNewStreams); // Can't allocate once a leak has been detected.
   }
+
+  @Test
 
   /** Use a helper method so there's no hidden reference remaining on the stack. */
   private void allocateAndLeakAllocation(ConnectionPool pool, RealConnection connection) {

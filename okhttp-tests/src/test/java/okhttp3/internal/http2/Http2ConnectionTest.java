@@ -1461,7 +1461,7 @@ public final class Http2ConnectionTest {
     Request request = new Request.Builder().url(server.url("/")).build();
     codec.writeRequestHeaders(request);
     codec.createRequestBody(request, 10);
-    Response response = new Response.Builder().request(request).protocol(Protocol.HTTP_2).code(200).addHeader("Content-type","plain/html").addHeader(":path","/temp").message("ABCDDE").build();
+    Response response = new Response.Builder().request(request).protocol(Protocol.HTTP_2).code(200).addHeader("Content-type","plain/html").addHeader(":path","/temp").removeHeader("Content").message("ABCDDE").build();
     assertEquals("plain/html",codec.openResponseBody(response).contentType().toString());
     codec.finishRequest();
   }
