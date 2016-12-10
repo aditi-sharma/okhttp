@@ -3093,7 +3093,8 @@ public final class URLConnectionTest {
   @Test
   public void customBasicMultipleRealmsAuthenticator() throws Exception{
     MockResponse pleaseAuthenticate = new MockResponse().setResponseCode(401)
-            .addHeader("WWW-Authenticate: Basic realm=\"protected area\" , New Realm=\"test realm\"")
+            .addHeader("WWW-Authenticate: Basic realm=\"protected area\"")
+            .addHeader("WWW-Authenticate: New Realm=\"test realm\"")
             .setBody("Please authenticate.");
     server.enqueue(pleaseAuthenticate);
     server.enqueue(new MockResponse().setBody("A"));
